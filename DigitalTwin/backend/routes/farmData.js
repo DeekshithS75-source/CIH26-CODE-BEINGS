@@ -163,6 +163,33 @@ router.post('/zone/:zoneId/alert', (req, res) => {
   res.json({ success: true, zone_id: zone.zone_id, alert: zone.alert });
 });
 
+/**
+ * POST /api/trigger-mode
+ * Toggle between AUTOMATED and CONFIRMATION mode.
+ * Body payload: { "mode": "AUTOMATED" | "CONFIRMATION" }
+ */
+router.post('/trigger-mode', (req, res) => {
+  const { mode } = req.body;
+  if (mode !== 'AUTOMATED' && mode !== 'CONFIRMATION') {
+    return res.status(400).json({ error: "Invalid mode. Must be 'AUTOMATED' or 'CONFIRMATION'." });
+  }
+
+  const state = simulator.loadState();
+  state.smart_trigger_mode = mode;
+  simulator.addLog(`[CONFIG] Smart Trigger Mode updated to ${mode}`);
+  simulator.saveState();
+
+  // If we change back to automated, clear any pending water alert
+  if (mode === 'AUTOMATED') {
+    state.zones.forEach(z => {
+      if (z.alert === 'NEEDS_WATER') z.alert = 'NONE';
+    });
+    simulator.saveState();
+  }
+
+  res.json({ success: true, smart_trigger_mode: state.smart_trigger_mode });
+});
+
 // Function to fetch weather forecast from OpenWeatherMap API
 async function getRealTimeWeather() {
   try {

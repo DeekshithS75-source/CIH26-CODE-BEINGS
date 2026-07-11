@@ -18,6 +18,8 @@ class FarmStatus {
     required this.apiTemperature,
     required this.apiHumidity,
     required this.apiRain,
+    required this.smartTriggerMode,
+    required this.alert,
   });
 
   final double temperature;
@@ -36,6 +38,8 @@ class FarmStatus {
   final double apiTemperature;
   final double apiHumidity;
   final bool apiRain;
+  final String smartTriggerMode;
+  final String alert;
 
   factory FarmStatus.fromJson(Map<String, dynamic> json) {
     return FarmStatus(
@@ -65,6 +69,9 @@ class FarmStatus {
                    (json['api_humidity'] as num?)?.toDouble() ?? 
                    (json['humidity'] as num?)?.toDouble() ?? 0.0,
       apiRain: json['apiRain'] as bool? ?? json['api_rain'] as bool? ?? json['rain'] as bool? ?? false,
+      smartTriggerMode: json['smartTriggerMode'] as String? ?? 
+                        json['smart_trigger_mode'] as String? ?? 'AUTOMATED',
+      alert: json['alert'] as String? ?? 'NONE',
     );
   }
 

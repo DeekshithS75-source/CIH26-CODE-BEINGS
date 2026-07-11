@@ -34,4 +34,16 @@ class Esp32ApiService {
     }
     return data;
   }
+
+  Future<void> updateTriggerMode(String mode) async {
+    await _dio.post<dynamic>('/api/trigger-mode', data: {'mode': mode});
+  }
+
+  Future<void> toggleIrrigation(String zone, bool value) async {
+    await _dio.post<dynamic>('/api/zone/$zone/irrigation', data: {'irrigation': value});
+  }
+
+  Future<void> clearAlert(String zone) async {
+    await _dio.post<dynamic>('/api/zone/$zone/alert', data: {'alert': 'NONE'});
+  }
 }

@@ -41,6 +41,8 @@ app.get('/status', (req, res) => {
     weatherForecast: zone.weather_forecast || 'STABLE',
     batteryHoursRemaining: zone.battery_time_remaining_hours || 25.0,
     currentDraw: zone.current_draw_ma || 80.0,
+    alert: zone.alert || 'NONE',
+    smart_trigger_mode: state.smart_trigger_mode || 'AUTOMATED',
     lastUpdated: new Date().toISOString()
   });
 });
@@ -160,7 +162,8 @@ setInterval(() => {
         soil_moisture: zone.soil_moisture,
         light: zone.light,
         irrigation: zone.irrigation ? 'ON' : 'OFF',
-        alert: zone.alert
+        alert: zone.alert,
+        smart_trigger_mode: updatedState.smart_trigger_mode || 'AUTOMATED'
       };
       
       mqttClient.publish(telemetryTopic, JSON.stringify(telemetryData));

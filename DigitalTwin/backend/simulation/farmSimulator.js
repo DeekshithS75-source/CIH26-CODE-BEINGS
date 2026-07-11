@@ -158,7 +158,8 @@ function loadState() {
       { zone_id: "B", crop: "Rice", temperature: 21.0, humidity: 70.0, soil_moisture: 85.0, light: 750, irrigation: false, alert: "NONE", battery_capacity_mah: 2000.0, current_draw_ma: 80.0, battery_time_remaining_hours: 25.0, battery: 100.0, crop_health: "HEALTHY", water_requirement: 0.0, weather_forecast: "STABLE" },
       { zone_id: "C", crop: "Wheat", temperature: 22.0, humidity: 55.0, soil_moisture: 75.0, light: 800, irrigation: false, alert: "NONE", battery_capacity_mah: 2000.0, current_draw_ma: 80.0, battery_time_remaining_hours: 25.0, battery: 100.0, crop_health: "HEALTHY", water_requirement: 0.0, weather_forecast: "STABLE" }
     ],
-    logs: [{ timestamp: "08:00:00", message: "Digital Twin Farm Simulation initialized." }]
+    logs: [{ timestamp: "08:00:00", message: "Digital Twin Farm Simulation initialized." }],
+    smart_trigger_mode: "AUTOMATED"
   };
   saveState();
   return currentState;
@@ -372,16 +373,29 @@ function tickSimulation() {
     }
 
     // Run automated fallback edge decision logic if ESP32 is offline and battery is functional
+    let nextAlert = zone.alert || "NONE";
     if (nextCapacity > 0.0) {
+      const triggerMode = state.smart_trigger_mode || "AUTOMATED";
       if (nextMoisture < 15.0 && forecast !== 'STORM_ALERT' && !isIrrigating) {
-        isIrrigating = true;
-        currentDraw = 250.0;
-        addLog(`[SIM-CONTROL] Zone ${zone.zone_id} (${zone.crop}) irrigation turned ON automatically (moisture ${nextMoisture}%)`);
+        if (triggerMode === 'AUTOMATED') {
+          isIrrigating = true;
+          currentDraw = 250.0;
+          addLog(`[SIM-CONTROL] Zone ${zone.zone_id} (${zone.crop}) irrigation turned ON automatically (moisture ${nextMoisture}%)`);
+        } else {
+          if (nextAlert !== 'NEEDS_WATER') {
+            nextAlert = 'NEEDS_WATER';
+            addLog(`[PENDING] Zone ${zone.zone_id} (${zone.crop}) needs irrigation (moisture ${nextMoisture}%). Awaiting farmer approval.`);
+          }
+        }
       } else if ((nextMoisture > 40.0 || forecast === 'STORM_ALERT') && isIrrigating) {
         isIrrigating = false;
         currentDraw = 80.0;
         addLog(`[SIM-CONTROL] Zone ${zone.zone_id} (${zone.crop}) irrigation turned OFF automatically (moisture ${nextMoisture}%)`);
       }
+    }
+
+    if (isIrrigating && nextAlert === 'NEEDS_WATER') {
+      nextAlert = 'NONE';
     }
 
     return {
@@ -391,6 +405,7 @@ function tickSimulation() {
       light: zoneLight,
       soil_moisture: nextMoisture,
       irrigation: isIrrigating,
+      alert: nextAlert,
       battery_capacity_mah: parseFloat(nextCapacity.toFixed(1)),
       current_draw_ma: currentDraw,
       battery_time_remaining_hours: timeRemaining,

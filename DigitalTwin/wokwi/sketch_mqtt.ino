@@ -126,6 +126,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       String irrigationStr = doc["irrigation"];
       String alertStr = doc["alert"];
       float currentPressure = doc["barometric_pressure"];
+      String triggerMode = doc["smart_trigger_mode"] | "AUTOMATED";
 
       // --- PRESSURE TREND CALCULATION ---
       float pressureTrend = 0.0;
@@ -142,7 +143,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       }
 
       Serial.println("-----------------------------------------");
-      Serial.printf("[TELEMETRY RECEIVED] Temp:%.1fC, Soil:%.1f%%, Light:%d\n", temperature, soilMoisture, light);
+      Serial.printf("[TELEMETRY RECEIVED] Temp:%.1fC, Soil:%.1f%%, Light:%d, Trigger:%s\n", temperature, soilMoisture, light, triggerMode.c_str());
       
       // ==========================================
       // 🧠 EDGE TINYML NEURAL NETWORK INFERENCE 🧠
@@ -165,16 +166,23 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       
       // 1. Water control based on Crop moisture levels (independent actuator logic)
       if (soilMoisture < 15.0 && alertStr != "STORM_ALERT" && !isIrrigating) {
-        Serial.println("[ML Decision] Soil is dry & no storm threat. Actuating Relay ON & Publishing.");
-        isIrrigating = true;
-        digitalWrite(RELAY_PIN, HIGH);
-        publishEdgePrediction(isIrrigating, alertStr, mlCropHealth, pred.water_requirement_score);
+        if (triggerMode == "AUTOMATED") {
+          Serial.println("[ML Decision] Soil is dry. AUTOMATED: Actuating Relay ON & Publishing.");
+          isIrrigating = true;
+          digitalWrite(RELAY_PIN, HIGH);
+          publishEdgePrediction(isIrrigating, alertStr, mlCropHealth, pred.water_requirement_score);
+        } else {
+          if (alertStr != "NEEDS_WATER") {
+            Serial.println("[ML Decision] Soil is dry. CONFIRMATION: Setting alert NEEDS_WATER & Publishing.");
+            publishEdgePrediction(isIrrigating, "NEEDS_WATER", mlCropHealth, pred.water_requirement_score);
+          }
+        }
       } 
       else if ((soilMoisture > 40.0 || alertStr == "STORM_ALERT") && isIrrigating) {
         Serial.println("[ML Decision] Soil moisture restored (or storm incoming)! Actuating Relay OFF & Publishing.");
         isIrrigating = false;
         digitalWrite(RELAY_PIN, LOW);
-        publishEdgePrediction(isIrrigating, alertStr, mlCropHealth, pred.water_requirement_score);
+        publishEdgePrediction(isIrrigating, alertStr == "STORM_ALERT" ? "STORM_ALERT" : "NONE", mlCropHealth, pred.water_requirement_score);
       }
 
       // 2. Alarm control based on Digital Twin Weather Alerts

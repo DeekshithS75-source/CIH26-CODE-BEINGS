@@ -93,6 +93,31 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       onChanged: (value) => _save(settings.copyWith(darkMode: value)),
                     ),
                     const SizedBox(height: 4),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Semi-Automated Irrigation'),
+                      subtitle: const Text('Require confirmation before turning on sprinkler pump'),
+                      secondary: const Icon(Icons.water_drop),
+                      value: settings.smartTriggerMode == 'CONFIRMATION',
+                      onChanged: (value) async {
+                        final nextMode = value ? 'CONFIRMATION' : 'AUTOMATED';
+                        // Optimistic local update first so toggle responds immediately
+                        await ref.read(settingsProvider.notifier).update(
+                          settings.copyWith(smartTriggerMode: nextMode),
+                        );
+                        // Then sync to backend
+                        try {
+                          await ref.read(farmProvider.notifier).setTriggerMode(nextMode);
+                        } catch (_) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Could not sync mode to backend')),
+                            );
+                          }
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 4),
                     SegmentedButton<TemperatureUnit>(
                       segments: const [
                         ButtonSegment(value: TemperatureUnit.celsius, label: Text('Celsius'), icon: Icon(Icons.thermostat)),

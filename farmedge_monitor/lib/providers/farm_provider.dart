@@ -17,6 +17,7 @@ class AppSettings {
     required this.darkMode,
     required this.temperatureUnit,
     required this.language,
+    required this.smartTriggerMode,
     required this.loaded,
   });
 
@@ -25,6 +26,7 @@ class AppSettings {
   final bool darkMode;
   final TemperatureUnit temperatureUnit;
   final AppLanguage language;
+  final String smartTriggerMode;
   final bool loaded;
 
   AppSettings copyWith({
@@ -33,6 +35,7 @@ class AppSettings {
     bool? darkMode,
     TemperatureUnit? temperatureUnit,
     AppLanguage? language,
+    String? smartTriggerMode,
     bool? loaded,
   }) {
     return AppSettings(
@@ -41,6 +44,7 @@ class AppSettings {
       darkMode: darkMode ?? this.darkMode,
       temperatureUnit: temperatureUnit ?? this.temperatureUnit,
       language: language ?? this.language,
+      smartTriggerMode: smartTriggerMode ?? this.smartTriggerMode,
       loaded: loaded ?? this.loaded,
     );
   }
@@ -58,6 +62,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       darkMode: true,
       temperatureUnit: TemperatureUnit.celsius,
       language: AppLanguage.en,
+      smartTriggerMode: 'AUTOMATED',
       loaded: false,
     );
   }
@@ -74,6 +79,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       language: AppLanguage.values.byName(
         prefs.getString('language') ?? AppLanguage.en.name,
       ),
+      smartTriggerMode: prefs.getString('smartTriggerMode') ?? 'AUTOMATED',
       loaded: true,
     );
   }
@@ -94,6 +100,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await prefs.setBool('darkMode', normalized.darkMode);
     await prefs.setString('temperatureUnit', normalized.temperatureUnit.name);
     await prefs.setString('language', normalized.language.name);
+    await prefs.setString('smartTriggerMode', normalized.smartTriggerMode);
   }
 
   static String _normalizeBaseUrl(String value) {
@@ -237,6 +244,38 @@ class FarmNotifier extends StateNotifier<FarmState> {
     if (!settings.loaded) throw StateError('Settings not loaded.');
     final service = Esp32ApiService(baseUrl: settings.baseUrl);
     return await service.fetchVoiceChat(query);
+  }
+
+  Future<void> setTriggerMode(String mode) async {
+    final settings = ref.read(settingsProvider);
+    if (!settings.loaded) return;
+    try {
+      final service = Esp32ApiService(baseUrl: settings.baseUrl);
+      await service.updateTriggerMode(mode);
+      await ref.read(settingsProvider.notifier).update(settings.copyWith(smartTriggerMode: mode));
+      await refresh();
+    } catch (_) {}
+  }
+
+  Future<void> approveIrrigation() async {
+    final settings = ref.read(settingsProvider);
+    if (!settings.loaded) return;
+    try {
+      final service = Esp32ApiService(baseUrl: settings.baseUrl);
+      await service.toggleIrrigation('A', true);
+      await service.clearAlert('A');
+      await refresh();
+    } catch (_) {}
+  }
+
+  Future<void> dismissIrrigationAlert() async {
+    final settings = ref.read(settingsProvider);
+    if (!settings.loaded) return;
+    try {
+      final service = Esp32ApiService(baseUrl: settings.baseUrl);
+      await service.clearAlert('A');
+      await refresh();
+    } catch (_) {}
   }
 
   @override

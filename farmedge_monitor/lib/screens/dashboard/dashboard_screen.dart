@@ -176,6 +176,10 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             const SizedBox(height: 16),
                             _StormAlertBanner(),
                           ],
+                          if (status?.alert == 'NEEDS_WATER') ...[
+                            const SizedBox(height: 16),
+                            _IrrigationConfirmBanner(moisture: status?.soilMoisture ?? 0.0),
+                          ],
                           const SizedBox(height: 20),
                           _HeroOverview(
                             status: status,
@@ -1580,6 +1584,89 @@ class _StormAlertBanner extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IrrigationConfirmBanner extends ConsumerWidget {
+  const _IrrigationConfirmBanner({required this.moisture});
+  final double moisture;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final lang = settings.language;
+
+    // Localized strings
+    final title = lang == AppLanguage.ml
+        ? 'നനയ്ക്കൽ ആവശ്യമുണ്ട്'
+        : (lang == AppLanguage.kn ? 'ನೀರಾವರಿ ವಿನಂತಿ' : 'IRRIGATION REQUEST');
+
+    final text = lang == AppLanguage.ml
+        ? 'മണ്ണിന്റെ ഈർപ്പം ${moisture.toStringAsFixed(1)}% ആയി കുറഞ്ഞു. പമ്പ് ഓണാക്കണോ?'
+        : (lang == AppLanguage.kn
+            ? 'ಮಣ್ಣಿನ ತೇವಾಂಶವು ${moisture.toStringAsFixed(1)}% ಕ್ಕೆ ಇಳಿದಿದೆ. ಪಂಪ್ ಆನ್ ಮಾಡಬೇಕೆ?'
+            : 'Soil moisture is dry at ${moisture.toStringAsFixed(1)}%. Turn on the sprinkler pump?');
+
+    final approveText = lang == AppLanguage.ml
+        ? 'അംഗീകരിക്കുക'
+        : (lang == AppLanguage.kn ? 'ಅನುಮೋದಿಸಿ' : 'Approve');
+
+    final dismissText = lang == AppLanguage.ml
+        ? 'വേണ്ട'
+        : (lang == AppLanguage.kn ? 'തിരസ്‌കരിക്കുക' : 'Dismiss');
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.warning.withOpacity(.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppTheme.warning, width: 1.5),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.water_drop, color: AppTheme.warning, size: 28),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                      color: AppTheme.warning,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14),
+                ),
+                Text(
+                  text,
+                  style: const TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          TextButton(
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white70,
+              backgroundColor: Colors.white10,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => ref.read(farmProvider.notifier).dismissIrrigationAlert(),
+            child: Text(dismissText, style: const TextStyle(fontSize: 12)),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.success,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () => ref.read(farmProvider.notifier).approveIrrigation(),
+            child: Text(approveText, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
