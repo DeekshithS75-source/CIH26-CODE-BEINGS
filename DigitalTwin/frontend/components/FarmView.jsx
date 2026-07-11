@@ -11,10 +11,10 @@ export default function FarmView({ zones, selectedZoneId, onSelectZone }) {
         <div>
           <h2 style={{ fontSize: '1.25rem', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>🌱</span>
-            <span>Digital Twin Farm Fields</span>
+            <span>Interactive Crop Fields</span>
           </h2>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Real-time interactive matrix showing crop stress levels and physical actuators.
+            Real-time visual replica of crop rows. Click any field to inspect its live sensor readings.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '12px', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
@@ -74,7 +74,7 @@ export default function FarmView({ zones, selectedZoneId, onSelectZone }) {
                 border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border-color)',
                 position: 'relative',
                 overflow: 'hidden',
-                minHeight: '260px',
+                minHeight: '320px',
                 padding: '16px',
                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 display: 'flex',
@@ -228,7 +228,7 @@ export default function FarmView({ zones, selectedZoneId, onSelectZone }) {
                       transform: `rotate(${rotDeg}deg) translateY(${isDry ? '4px' : '0px'})`,
                       transition: 'all 0.5s ease-in-out'
                     }}>
-                      <svg viewBox="0 0 100 100" width="36" height="36" style={{ overflow: 'visible' }}>
+                      <svg viewBox="0 0 100 100" width="52" height="52" style={{ overflow: 'visible' }}>
                         {/* Stalk */}
                         <path d="M 50,95 Q 48,50 50,20" stroke="#5c4033" strokeWidth="4" fill="none" />
                         

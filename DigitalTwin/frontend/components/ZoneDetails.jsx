@@ -98,7 +98,7 @@ export default function ZoneDetails({ zone, history, onToggleIrrigation, mockEsp
           </span>
         </div>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-          Local soil moisture & decision telemetry.
+          Physical sensor data stream.
         </p>
       </div>
 
@@ -125,7 +125,7 @@ export default function ZoneDetails({ zone, history, onToggleIrrigation, mockEsp
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '0.85rem' }}>
           {/* Classification Output */}
           <div className="flex-between">
-            <span style={{ color: 'var(--text-secondary)' }}>Edge AI Crop Health:</span>
+            <span style={{ color: 'var(--text-secondary)' }}>AI Crop Health Status:</span>
             {zone.crop_health ? (
               <span className={`badge ${
                 zone.crop_health === 'HEALTHY' ? 'badge-green' : 'badge-red'
@@ -140,7 +140,7 @@ export default function ZoneDetails({ zone, history, onToggleIrrigation, mockEsp
           {/* Has water score, show progress bar */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid rgba(16, 185, 129, 0.1)', paddingTop: '10px' }}>
             <div className="flex-between">
-              <span style={{ color: 'var(--text-secondary)' }}>Edge ML Water Score:</span>
+              <span style={{ color: 'var(--text-secondary)' }}>Calculated Water Need:</span>
               <span style={{ fontWeight: '700', color: 'var(--water)' }}>
                 {zone.water_requirement !== undefined ? `${parseFloat(zone.water_requirement).toFixed(1)}%` : 'N/A'}
               </span>
@@ -168,13 +168,13 @@ export default function ZoneDetails({ zone, history, onToggleIrrigation, mockEsp
           {/* Actuator States */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', borderTop: '1px solid rgba(16, 185, 129, 0.1)', paddingTop: '10px', fontSize: '0.8rem' }}>
             <div className="flex-between">
-              <span style={{ color: 'var(--text-muted)' }}>Sprinkler Valve (Pin 26):</span>
+              <span style={{ color: 'var(--text-muted)' }}>Solenoid Valve (Pin 26):</span>
               <span style={{ fontWeight: '700', color: isIrrigating ? 'var(--water)' : 'var(--text-muted)' }}>
                 {isIrrigating ? 'OPEN [ON]' : 'CLOSED [OFF]'}
               </span>
             </div>
             <div className="flex-between">
-              <span style={{ color: 'var(--text-muted)' }}>Alarm Buzzer (Pin 27):</span>
+              <span style={{ color: 'var(--text-muted)' }}>Emergency Alarm (Pin 27):</span>
               <span style={{ fontWeight: '700', color: zone.alert !== 'NONE' ? 'var(--danger)' : 'var(--text-muted)' }}>
                 {zone.alert !== 'NONE' ? 'ALERT ACTIVE [ON]' : 'STANDBY [OFF]'}
               </span>

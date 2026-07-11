@@ -24,6 +24,8 @@ bool isIrrigating = false;
 bool isAlertActive = false;
 unsigned long lastQueryTime = 0;
 const unsigned long queryInterval = 3000; // Query every 3 seconds
+unsigned long lastBlinkTime = 0;
+bool ledState = false;
 
 void setup() {
   Serial.begin(115200);
@@ -73,6 +75,23 @@ void loop() {
     Serial.println("WiFi Disconnected! Reconnecting...");
     WiFi.begin(ssid, password);
     delay(2000);
+  }
+
+  // --- NON-BLOCKING LED BLINKING WHEN PUMP IS ACTIVE ---
+  if (isIrrigating) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastBlinkTime >= 250) { // Blink rapidly (250ms) to indicate water flow
+      lastBlinkTime = currentMillis;
+      ledState = !ledState;
+      digitalWrite(RED_LED_PIN, ledState ? HIGH : LOW);
+    }
+  } else {
+    // If pump is off, show warning status (static HIGH on alert, LOW otherwise)
+    if (isAlertActive) {
+      digitalWrite(RED_LED_PIN, HIGH);
+    } else {
+      digitalWrite(RED_LED_PIN, LOW);
+    }
   }
 }
 
@@ -222,9 +241,7 @@ void setAlertState(String alertType) {
     Serial.printf("[Alarm] POST Response Code: %d\n", httpCode);
     if (httpCode == HTTP_CODE_OK) {
       isAlertActive = (alertType != "NONE");
-      // Actuate Red LED connected to Pin 27
-      digitalWrite(RED_LED_PIN, isAlertActive ? HIGH : LOW);
-      Serial.printf("[Alarm] Pin 27 state set to %s\n", isAlertActive ? "HIGH" : "LOW");
+      Serial.printf("[Alarm] Alert status set to %s\n", alertType.c_str());
     }
   } else {
     Serial.print("[Alarm] POST failed: ");

@@ -4,7 +4,6 @@ import { Cloud, CloudRain, Sun, Flame, Clock, Radio, Activity, Cpu, Sparkles } f
 import SensorCards from '../components/SensorCards';
 import FarmView from '../components/FarmView';
 import ZoneDetails from '../components/ZoneDetails';
-import VoiceAssistant from '../components/VoiceAssistant';
 
 const BACKEND_URL = 'http://localhost:3001';
 
@@ -385,20 +384,20 @@ export default function Home() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span className="badge badge-green" style={{ display: 'flex', gap: '4px' }}>
                   <Sparkles size={10} />
-                  <span>Bio-Twin Online</span>
+                  <span>Physical Layer Simulator</span>
                 </span>
                 {mockEspEnabled && (
                   <span className="badge badge-blue" style={{ gap: '4px' }}>
                     <Cpu size={10} />
-                    <span>Edge Controller Simulator</span>
+                    <span>Edge Rules Controller Active</span>
                   </span>
                 )}
               </div>
               <h1 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span>🌾</span>
-                <span>Smart Farm Digital Twin</span>
+                <span>KrishiSetu: Live Farm Simulator</span>
               </h1>
-              <p>Cyber-physical biosphere tracking microclimatic moisture, crop strain, and edge actuation.</p>
+              <p>Visual sandbox representing the physical farm environment, crop states, and microclimate telemetry.</p>
             </div>
           </header>
 
@@ -406,9 +405,9 @@ export default function Home() {
           <section className="glass-card" style={{ marginBottom: '24px', padding: '16px 24px' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
               <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: '800' }}>Atmospheric Command Center</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: '800' }}>Atmospheric Controls</h3>
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Manually force weather cycles to test the ESP32 automated rule engine.
+                  Force simulation weather cycles to evaluate ESP32 sensor responses.
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -508,8 +507,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
-      <VoiceAssistant />
 
       <style jsx global>{`
         @keyframes float-clouds {

@@ -29,6 +29,8 @@ PubSubClient client(espClient);
 // Local State Tracking
 bool isIrrigating = false;
 bool isAlertActive = false;
+unsigned long lastBlinkTime = 0;
+bool ledState = false;
 
 void setup() {
   Serial.begin(115200);
@@ -76,6 +78,24 @@ void loop() {
   
   // Process incoming messages and keep connection alive
   client.loop();
+
+  // --- NON-BLOCKING LED BLINKING WHEN PUMP IS ACTIVE ---
+  if (isIrrigating) {
+    unsigned long currentMillis = millis();
+    if (currentMillis - lastBlinkTime >= 250) { // Blink rapidly (250ms) to indicate water flow
+      lastBlinkTime = currentMillis;
+      ledState = !ledState;
+      digitalWrite(RED_LED_PIN, ledState ? HIGH : LOW);
+    }
+  } else {
+    // If pump is off, show warning status (static HIGH on alert, LOW otherwise)
+    if (isAlertActive) {
+      digitalWrite(RED_LED_PIN, HIGH);
+    } else {
+      digitalWrite(RED_LED_PIN, LOW);
+    }
+  }
+  
   delay(50);
 }
 
@@ -159,15 +179,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
       // 2. Alarm control based on Digital Twin Weather Alerts
       if (alertStr == "STORM_ALERT" && !isAlertActive) {
-        Serial.println("[Warning] Storm warning active! Actuating Red Alert LED ON.");
+        Serial.println("[Warning] Storm warning active! Actuating Red Alert LED to blink.");
         isAlertActive = true;
-        digitalWrite(RED_LED_PIN, HIGH);
         publishEdgePrediction(isIrrigating, "STORM_ALERT", mlCropHealth, pred.water_requirement_score);
       } 
       else if (alertStr != "STORM_ALERT" && isAlertActive) {
         Serial.println("[Warning] Storm warning cleared. Clearing Red Alert LED.");
         isAlertActive = false;
-        digitalWrite(RED_LED_PIN, LOW);
         publishEdgePrediction(isIrrigating, "NONE", mlCropHealth, pred.water_requirement_score);
       }
       
