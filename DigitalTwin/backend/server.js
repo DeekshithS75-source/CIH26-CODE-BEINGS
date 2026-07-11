@@ -20,6 +20,31 @@ app.get('/', (req, res) => {
   res.send('Smart Agriculture Digital Twin Simulator Backend is online.');
 });
 
+// Compatible status endpoint for the Flutter Dashboard
+app.get('/status', (req, res) => {
+  const state = simulator.loadState();
+  const zoneId = (req.query.zone || 'A').toUpperCase();
+  const zone = state.zones.find(z => z.zone_id === zoneId);
+  if (!zone) {
+    return res.status(404).json({ error: `Zone ${zoneId} not found` });
+  }
+  
+  res.json({
+    temperature: zone.temperature,
+    humidity: zone.humidity,
+    soilMoisture: zone.soil_moisture,
+    battery: zone.battery,
+    pump: zone.irrigation,
+    rain: state.weather.condition === 'RAINY' || state.weather.condition === 'STORM',
+    cropStress: zone.crop_health || 'HEALTHY',
+    pressure: state.weather.barometric_pressure || 1013.0,
+    weatherForecast: zone.weather_forecast || 'STABLE',
+    batteryHoursRemaining: zone.battery_time_remaining_hours || 25.0,
+    currentDraw: zone.current_draw_ma || 80.0,
+    lastUpdated: new Date().toISOString()
+  });
+});
+
 // ==========================================
 // MQTT BROKER CLIENT INTEGRATION
 // ==========================================
@@ -90,6 +115,12 @@ mqttClient.on('message', (topic, message) => {
       // 4. Update Water Requirement Prediction from Edge ML Model
       if (payload.water_requirement !== undefined) {
         zone.water_requirement = payload.water_requirement;
+        stateChanged = true;
+      }
+
+      // 5. Update Weather Forecast Prediction from Edge ML Model
+      if (payload.weather_forecast !== undefined) {
+        zone.weather_forecast = payload.weather_forecast;
         stateChanged = true;
       }
 
@@ -165,8 +196,10 @@ function generateNlgResponse(zone, weather, lang, question) {
   const waterKeys = ["water", "irrigate", "sprinkler", "wet", "dry", "moisture", "വെള്ളം", "നനയ്ക്കുക", "ഈർപ്പം", "നീരു", "ತೇವಾಂಶ"];
   const diseaseKeys = ["disease", "health", "sick", "fungus", "pest", "safe", "രോഗം", "ചെടി", "കേട്", "സുരക്ഷിതം", "ಬೆಳೆ", "ರೋಗ", "ಉಪದ್ರವ", "ಸುರಕ್ಷಿತ"];
   
+  const greetingKeys = ["hello", "hi", "hey", "namaste", "ഹലോ", "ഹായ്", "ഹേയ്", "നമസ്കാരം", "ಹಲೋ", "ಹಾಯ್", "ಹೇ", "ನಮಸ್ಕಾರ"];
   let intent = "SUMMARY";
-  if (weatherKeys.some(k => questionLower.includes(k))) intent = "WEATHER";
+  if (greetingKeys.some(k => questionLower.includes(k))) intent = "GREETING";
+  else if (weatherKeys.some(k => questionLower.includes(k))) intent = "WEATHER";
   else if (waterKeys.some(k => questionLower.includes(k))) intent = "WATER";
   else if (diseaseKeys.some(k => questionLower.includes(k))) intent = "DISEASE";
   
@@ -179,7 +212,9 @@ function generateNlgResponse(zone, weather, lang, question) {
   const knZoneId = zone.zone_id === 'A' ? 'ಎ' : (zone.zone_id === 'B' ? 'ಬಿ' : 'ಸಿ');
   
   if (lang === 'ml') {
-    if (intent === 'WEATHER') {
+    if (intent === 'GREETING') {
+      return "ഹലോ! ഞാൻ നിങ്ങളുടെ അഗ്രോണമിസ്റ്റ് സഹായിയാണ്. ഇന്ന് നിങ്ങളുടെ വിളയെ പരിപാലിക്കുന്നതിനോ സെൻസർ വിവരങ്ങൾ കാണുന്നതിനോ എനിക്ക് എങ്ങനെ സഹായിക്കാനാകും?";
+    } else if (intent === 'WEATHER') {
       return `ഇപ്പോഴത്തെ കാലാവസ്ഥ ${weather.condition} ആണ്. അന്തരീക്ഷ ഊഷ്മാവ് ${temp} ഡിഗ്രി രേഖപ്പെടുത്തിയിട്ടുണ്ട്.`;
     } else if (intent === 'WATER') {
       const statusText = isDry ? "വളരെ കുറവാണ്" : (isSaturated ? "വളരെ കൂടുതലാണ്" : "ആവശ്യത്തിനുണ്ട്");
@@ -194,7 +229,9 @@ function generateNlgResponse(zone, weather, lang, question) {
       return `${cropAdvice} ${actionAdvice}`;
     }
   } else if (lang === 'kn') {
-    if (intent === 'WEATHER') {
+    if (intent === 'GREETING') {
+      return "ನಮಸ್ಕಾರ! ನಾನು ನಿಮ್ಮ ಕೃಷಿ ಸಲಹೆಗಾರ ಸಹಾಯಕ. ಇಂದು ನಿಮ್ಮ ಬೆಳೆ ನಿರ್ವಹಣೆ ಅಥವಾ ಸೆನ್ಸರ್ ಮಾಹಿತಿ ವೀಕ್ಷಿಸಲು ನಾನು ಹೇಗೆ ಸಹಾಯ ಮಾಡಲಿ?";
+    } else if (intent === 'WEATHER') {
       return `ಸದ್ಯದ ಹವಾಮಾನವು ${weather.condition} ಆಗಿದೆ. ತಾಪಮಾನವು ${temp} ಡಿಗ್ರಿ ಸೆಲ್ಸಿಯಸ್ ದಾಖಲಾಗಿದೆ.`;
     } else if (intent === 'WATER') {
       const statusText = isDry ? "ಅತ್ಯಂತ ಕಡಿಮೆಯಿದೆ" : (isSaturated ? "ಅತಿಯಾಗಿದೆ" : "ಸೂಕ್ತವಾಗಿದೆ");
@@ -209,8 +246,10 @@ function generateNlgResponse(zone, weather, lang, question) {
       return `${cropAdvice} ${actionAdvice}`;
     }
   } else {
-    if (intent === 'WEATHER') {
-      return `The current weather conditions are {weather.condition}. The local temperature is ${temp} degrees.`;
+    if (intent === 'GREETING') {
+      return "Hello! I am your AI Agronomist assistant. How can I help you manage your crop or view sensor details today?";
+    } else if (intent === 'WEATHER') {
+      return `The current weather conditions are ${weather.condition}. The local temperature is ${temp} degrees.`;
     } else if (intent === 'WATER') {
       const statusText = isDry ? "critically dry" : (isSaturated ? "waterlogged" : "optimal");
       const sprinklerText = sprinkler ? "The automated sprinkler pump is active." : "The irrigation system is standby.";
@@ -219,7 +258,7 @@ function generateNlgResponse(zone, weather, lang, question) {
       const riskText = isHighRisk ? "high risk of fungal pathogens. Check crop leaves for spots." : "low risk. Crop leaves show normal chlorophyll health.";
       return `Based on temperature (${temp}C) and humidity (${hum}%) in Zone ${zone.zone_id}, there is a ${riskText}`;
     } else {
-      const cropAdvice = isDry ? `Your ${crop} crop in Zone ${zone.zone_id} is water-stressed with critical {soil} percent moisture.` : `Your ${crop} crop in Zone ${zone.zone_id} is healthy, and the soil moisture is stable at ${soil} percent.`;
+      const cropAdvice = isDry ? `Your ${crop} crop in Zone ${zone.zone_id} is water-stressed with critical ${soil} percent moisture.` : `Your ${crop} crop in Zone ${zone.zone_id} is healthy, and the soil moisture is stable at ${soil} percent.`;
       const actionAdvice = sprinkler ? "The automated sprinkler pump is active." : "The irrigation system is standby.";
       return `${cropAdvice} ${actionAdvice}`;
     }
@@ -239,9 +278,9 @@ app.get('/api/voice-chat', async (req, res) => {
   // Dynamically detect which zone the user is asking about
   let selectedZoneId = 'A'; // Default
   
-  if (queryLower.includes('zone b') || queryLower.includes('field b') || queryLower.includes('crop b') || queryLower.includes('ബി') || queryLower.includes('വಲಯ ബി')) {
+  if (queryLower.includes('zone b') || queryLower.includes('field b') || queryLower.includes('crop b') || queryLower.includes('ബി') || queryLower.includes('വലയ ബി')) {
     selectedZoneId = 'B';
-  } else if (queryLower.includes('zone c') || queryLower.includes('field c') || queryLower.includes('crop c') || queryLower.includes('സി') || queryLower.includes('വಲಯ സി')) {
+  } else if (queryLower.includes('zone c') || queryLower.includes('field c') || queryLower.includes('crop c') || queryLower.includes('സി') || queryLower.includes('വലയ സി')) {
     selectedZoneId = 'C';
   }
 
@@ -262,44 +301,137 @@ Current Farm State:
 
   let aiResponse = null;
 
-  // Try Local Ollama model first
-  try {
-    const prompt = `
-You are a helpful, professional AI Agronomist chatbot. 
+  // 1. Try Groq API first (Online LLM)
+  const groqApiKey = process.env.GROQ_API_KEY;
+  if (groqApiKey && groqApiKey !== 'your_groq_api_key_here') {
+    try {
+      console.log('[API Voice Chat] Attempting Groq API...');
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${groqApiKey}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a helpful, warm, and friendly AI Agronomist chatbot. 
 Analyze the live sensor data of the farm and answer the farmer's question.
 If the farmer asks in Malayalam, reply in Malayalam.
 If the farmer asks in Kannada, reply in Kannada.
 Otherwise, reply in English.
 IMPORTANT: Respond immediately and directly with the final answer. Do NOT output any thinking, reasoning, or <think> tags.
+If the user is just saying hello, greeting you, or introducing themselves, reply with a warm, friendly greeting and ask how you can help them, without analyzing the crop or sensor data unless they specifically ask.
 Keep your response concise (maximum 3 sentences) and highly practical.
 
-${contextStr}
+${contextStr}`
+            },
+            { role: 'user', content: query }
+          ],
+          temperature: 0.7,
+          max_tokens: 300
+        }),
+        signal: AbortSignal.timeout(3500)
+      });
 
-Farmer Question: "${query}"
-AI Agronomist Answer:`;
-
-    const ollamaResponse = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'qwen3:4b',
-        prompt: prompt,
-        stream: false
-      }),
-      signal: AbortSignal.timeout(3000)
-    });
-
-    if (ollamaResponse.status === 200) {
-      const data = await ollamaResponse.json();
-      aiResponse = data.response.trim();
+      if (response.status === 200) {
+        const data = await response.json();
+        aiResponse = data.choices?.[0]?.message?.content?.trim();
+        console.log('[API Voice Chat] Groq response successful.');
+      } else {
+        console.warn(`[API Voice Chat] Groq returned status ${response.status}`);
+      }
+    } catch (err) {
+      console.log('[API Voice Chat] Groq call failed or timed out:', err.message);
     }
-  } catch (err) {
-    console.log('[API Voice Chat] Local Ollama not available. Using local NLG...');
   }
 
-  // Fallback to NLG
+  // 2. Try Local Ollama if Groq wasn't used or failed
+  if (!aiResponse) {
+    try {
+      console.log('[API Voice Chat] Attempting local Ollama...');
+      const ollamaResponse = await fetch('http://localhost:11434/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'qwen3:4b',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a helpful, warm, and friendly AI Agronomist chatbot. 
+Analyze the live sensor data of the farm and answer the farmer's question.
+If the farmer asks in Malayalam, reply in Malayalam.
+If the farmer asks in Kannada, reply in Kannada.
+Otherwise, reply in English.
+IMPORTANT: Respond immediately and directly with the final answer. Do NOT output any thinking, reasoning, or <think> tags.
+If the user is just saying hello, greeting you, or introducing themselves, reply with a warm, friendly greeting and ask how you can help them, without analyzing the crop or sensor data unless they specifically ask.
+Keep your response concise (maximum 3 sentences) and highly practical.
+
+${contextStr}`
+            },
+            { role: 'user', content: query }
+          ],
+          temperature: 0.7,
+          max_tokens: 300,
+          stream: false
+        }),
+        signal: AbortSignal.timeout(3000)
+      });
+
+      if (ollamaResponse.status === 200) {
+        const data = await ollamaResponse.json();
+        aiResponse = data.choices?.[0]?.message?.content?.trim() || data.response?.trim();
+        console.log('[API Voice Chat] Local Ollama response successful.');
+      }
+    } catch (err) {
+      console.log('[API Voice Chat] Local Ollama not available. Using local NLG...');
+    }
+  }
+
+  // 3. Fallback to local rule-based NLG
   if (!aiResponse) {
     aiResponse = generateNlgResponse(zone, weather, lang, query);
+  }
+
+  // 4. Try Sarvam TTS if API key is configured
+  let base64Audio = null;
+  const sarvamApiKey = process.env.SARVAM_API_KEY;
+  if (sarvamApiKey && sarvamApiKey !== 'your_sarvam_api_key_here') {
+    try {
+      console.log('[API Voice Chat] Attempting Sarvam TTS...');
+      let targetLang = 'en-IN';
+      if (lang === 'ml') targetLang = 'ml-IN';
+      else if (lang === 'kn') targetLang = 'kn-IN';
+
+      const ttsResponse = await fetch('https://api.sarvam.ai/text-to-speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-subscription-key': sarvamApiKey
+        },
+        body: JSON.stringify({
+          text: aiResponse,
+          target_language_code: targetLang,
+          speaker: 'shubh',
+          model: 'bulbul:v3'
+        }),
+        signal: AbortSignal.timeout(10000)
+      });
+
+      if (ttsResponse.status === 200) {
+        const ttsData = await ttsResponse.json();
+        if (ttsData.audios && ttsData.audios[0]) {
+          base64Audio = ttsData.audios[0];
+          console.log('[API Voice Chat] Sarvam TTS conversion successful.');
+        }
+      } else {
+        console.warn(`[API Voice Chat] Sarvam TTS returned status ${ttsResponse.status}`);
+      }
+    } catch (err) {
+      console.log('[API Voice Chat] Sarvam TTS failed:', err.message);
+    }
   }
 
   console.log(`[Voice Chat API] Q: "${query}" (${lang.toUpperCase()}) -> A: "${aiResponse}"`);
@@ -307,7 +439,8 @@ AI Agronomist Answer:`;
     success: true,
     transcription: query,
     language: lang,
-    response: aiResponse
+    response: aiResponse,
+    audio: base64Audio
   });
 });
 

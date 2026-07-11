@@ -16,4 +16,22 @@ class Esp32ApiService {
     }
     return FarmStatus.fromJson(data);
   }
+
+  Future<Map<String, dynamic>> fetchTomorrowPrediction(String zone) async {
+    final response = await _dio.get<Map<String, dynamic>>('/api/weather/predict-tomorrow', queryParameters: {'zone': zone});
+    final data = response.data;
+    if (data == null) {
+      throw StateError('Prediction API returned an empty response.');
+    }
+    return data;
+  }
+
+  Future<Map<String, dynamic>> fetchVoiceChat(String query) async {
+    final response = await _dio.get<Map<String, dynamic>>('/api/voice-chat', queryParameters: {'query': query});
+    final data = response.data;
+    if (data == null) {
+      throw StateError('Voice API returned an empty response.');
+    }
+    return data;
+  }
 }

@@ -7,6 +7,7 @@ import '../core/constants/app_constants.dart';
 import '../models/farm_status.dart';
 import '../services/esp32_api_service.dart';
 
+enum AppLanguage { en, ml, kn }
 enum TemperatureUnit { celsius, fahrenheit }
 
 class AppSettings {
@@ -15,6 +16,7 @@ class AppSettings {
     required this.pollingSeconds,
     required this.darkMode,
     required this.temperatureUnit,
+    required this.language,
     required this.loaded,
   });
 
@@ -22,6 +24,7 @@ class AppSettings {
   final int pollingSeconds;
   final bool darkMode;
   final TemperatureUnit temperatureUnit;
+  final AppLanguage language;
   final bool loaded;
 
   AppSettings copyWith({
@@ -29,6 +32,7 @@ class AppSettings {
     int? pollingSeconds,
     bool? darkMode,
     TemperatureUnit? temperatureUnit,
+    AppLanguage? language,
     bool? loaded,
   }) {
     return AppSettings(
@@ -36,6 +40,7 @@ class AppSettings {
       pollingSeconds: pollingSeconds ?? this.pollingSeconds,
       darkMode: darkMode ?? this.darkMode,
       temperatureUnit: temperatureUnit ?? this.temperatureUnit,
+      language: language ?? this.language,
       loaded: loaded ?? this.loaded,
     );
   }
@@ -52,6 +57,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       pollingSeconds: 1,
       darkMode: true,
       temperatureUnit: TemperatureUnit.celsius,
+      language: AppLanguage.en,
       loaded: false,
     );
   }
@@ -64,6 +70,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       darkMode: prefs.getBool('darkMode') ?? true,
       temperatureUnit: TemperatureUnit.values.byName(
         prefs.getString('temperatureUnit') ?? TemperatureUnit.celsius.name,
+      ),
+      language: AppLanguage.values.byName(
+        prefs.getString('language') ?? AppLanguage.en.name,
       ),
       loaded: true,
     );
@@ -84,6 +93,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await prefs.setInt('pollingSeconds', normalized.pollingSeconds);
     await prefs.setBool('darkMode', normalized.darkMode);
     await prefs.setString('temperatureUnit', normalized.temperatureUnit.name);
+    await prefs.setString('language', normalized.language.name);
   }
 
   static String _normalizeBaseUrl(String value) {
@@ -213,6 +223,20 @@ class FarmNotifier extends StateNotifier<FarmState> {
     refresh();
     final seconds = ref.read(settingsProvider).pollingSeconds;
     _timer = Timer.periodic(Duration(seconds: seconds), (_) => refresh());
+  }
+
+  Future<Map<String, dynamic>> fetchTomorrowPrediction(String zone) async {
+    final settings = ref.read(settingsProvider);
+    if (!settings.loaded) throw StateError('Settings not loaded.');
+    final service = Esp32ApiService(baseUrl: settings.baseUrl);
+    return await service.fetchTomorrowPrediction(zone);
+  }
+
+  Future<Map<String, dynamic>> fetchVoiceChat(String query) async {
+    final settings = ref.read(settingsProvider);
+    if (!settings.loaded) throw StateError('Settings not loaded.');
+    final service = Esp32ApiService(baseUrl: settings.baseUrl);
+    return await service.fetchVoiceChat(query);
   }
 
   @override

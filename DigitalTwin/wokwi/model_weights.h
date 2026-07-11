@@ -1,55 +1,55 @@
 // Auto-generated Multi-Task Neural Network Weights for ESP32
-// Inputs: [Temp_norm, Hum_norm, Soil_norm, Light_norm]
+// Inputs: [Temp_norm, Hum_norm, Moisture_norm, Solar_norm]
 // Hidden Layer: 5 Neurons (ReLU)
-// Outputs: Classification (3 classes: HEALTHY, WATER_STRESSED, HEAT_STRESSED) 
+// Outputs: Classification (3 classes: HEALTHY, MODERATE_STRESS, HIGH_STRESS) 
 //          & Regression (Water Requirement Score, 0-100)
 
 namespace EdgeML {
     // Hidden Layer 1 Weights (Input to Hidden)
     const float W1[4][5] = {
-        {0.545429f, 0.060497f, -0.693818f, 0.133097f, -0.149546f},
-        {0.098413f, -0.097127f, 0.449002f, 0.252202f, 0.191426f},
-        {-1.498644f, -0.081558f, 0.472548f, 2.422718f, -3.349271f},
-        {0.603241f, -0.120274f, -0.728705f, 0.312055f, -0.094436f},
+        {0.184584f, 0.206265f, 0.349277f, -0.130628f, 0.176563f},
+        {0.215530f, 0.213284f, 0.063085f, -0.102476f, -0.119546f},
+        {1.303350f, -1.001309f, -0.722563f, 0.044680f, -0.054519f},
+        {0.009230f, 0.149269f, 0.035401f, -0.063841f, -0.067604f},
     };
     
-    const float b1[5] = { 0.892476f, 0.002763f, 0.893252f, 0.017805f, 1.713905f };
+    const float b1[5] = { -0.098281f, 0.675426f, 0.457003f, -0.000942f, -0.026442f };
 
     // Classification Branch Weights (Hidden to Class Output)
     const float W_class[5][3] = {
-        {-1.277239f, 1.221163f, -0.143669f},
-        {-0.022999f, -0.029790f, 0.022740f},
-        {1.008515f, -0.027912f, -1.055886f},
-        {0.824754f, -1.754484f, 0.962464f},
-        {-1.862173f, 2.651121f, -0.888691f},
+        {0.003714f, 0.060451f, -0.115525f},
+        {0.107086f, 0.078150f, 0.058419f},
+        {-0.334745f, -0.039598f, 0.101351f},
+        {-0.004609f, 0.000022f, -0.010728f},
+        {0.001026f, 0.082087f, -0.156896f},
     };
     
-    const float b_class[3] = { 0.994984f, 0.115429f, -1.110413f };
+    const float b_class[3] = { 0.070242f, -0.123582f, 0.053340f };
 
     // Regression Branch Weights (Hidden to Reg Output)
     const float W_reg[5][1] = {
-        {0.787875f},
-        {0.089513f},
-        {-0.331973f},
-        {-1.173171f},
-        {1.712711f},
+        {-1.319420f},
+        {1.281627f},
+        {0.886269f},
+        {-0.003433f},
+        {0.076565f},
     };
     
-    const float b_reg[1] = { -0.429867f };
+    const float b_reg[1] = { 0.108428f };
 
     // Forward Propagation logic executing at the Edge
     struct Prediction {
-        int crop_health; // 0 = HEALTHY, 1 = WATER_STRESSED, 2 = HEAT_STRESSED
+        int crop_health; // 0 = HEALTHY, 1 = MODERATE_STRESS, 2 = HIGH_STRESS
         float water_requirement_score; // 0.0 to 100.0
     };
 
-    Prediction predict(float temp, float hum, float soil, float light) {
+    Prediction predict(float temp, float hum, float soilMoisture, float solarRadiation) {
         // 1. Normalize Inputs
         float x[4];
-        x[0] = (temp - 15.0f) / 30.0f;
-        x[1] = (hum - 20.0f) / 70.0f;
-        x[2] = soil / 100.0f;
-        x[3] = light / 4095.0f;
+        x[0] = (temp - 15.0f) / 25.0f;
+        x[1] = (hum - 30.0f) / 65.0f;
+        x[2] = (soilMoisture - 5.0f) / 40.0f;
+        x[3] = (solarRadiation - 200.0f) / 800.0f;
 
         // 2. Feed Hidden Layer (Matrix multiply + Bias + ReLU activation)
         float h[5];

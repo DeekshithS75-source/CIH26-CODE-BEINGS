@@ -27,10 +27,10 @@ function calculateWeather(hour, condition) {
     baseLight = 10 + Math.random() * 40;
   }
 
-  // Adjust light for rainy/cloudy conditions
+  // Adjust light for rainy/cloudy/stormy conditions
   let light = Math.round(baseLight);
-  if (condition === 'RAINY') {
-    light = Math.round(light * 0.3); // Heavy clouds block 70% light
+  if (condition === 'RAINY' || condition === 'STORM') {
+    light = Math.round(light * 0.15); // Heavy storm clouds block 85% light
   } else if (condition === 'CLOUDY') {
     light = Math.round(light * 0.6); // Clouds block 40% light
   }
@@ -51,6 +51,8 @@ function calculateWeather(hour, condition) {
   // Weather condition adjustments
   if (condition === 'RAINY') {
     baseTemp -= 6.0; // Rain cools the environment
+  } else if (condition === 'STORM') {
+    baseTemp -= 8.0; // Severe storm cools the environment more
   } else if (condition === 'CLOUDY') {
     baseTemp -= 2.0;
   } else if (condition === 'HEATWAVE') {
@@ -70,18 +72,44 @@ function calculateWeather(hour, condition) {
   // Weather adjustments
   if (condition === 'RAINY') {
     baseHumidity = 85.0 + Math.random() * 5.0; // Rainy is humid (85-90%)
+  } else if (condition === 'STORM') {
+    baseHumidity = 92.0 + Math.random() * 4.0; // Stormy is very humid (92-96%)
   } else if (condition === 'CLOUDY') {
     baseHumidity += 15.0;
   }
 
-  const humidity = parseFloat(Math.max(20.0, Math.min(90.0, baseHumidity)).toFixed(1));
+  const humidity = parseFloat(Math.max(20.0, Math.min(96.0, baseHumidity)).toFixed(1));
+
+  // 4. Barometric Pressure Model (Range: 975 hPa - 1020 hPa)
+  // Baseline is ~1013.0 hPa (Standard atmospheric pressure)
+  let basePressure = 1013.0;
+  // Natural slight daily fluctuations (+/- 1.2 hPa)
+  const pressAngle = ((hour - 4) / 24) * 2 * Math.PI;
+  basePressure += Math.sin(pressAngle) * 1.2;
+
+  // Weather adjustments
+  if (condition === 'STORM') {
+    basePressure = 980.0 + (Math.random() - 0.5) * 2.0; // Cyclone/severe low pressure
+  } else if (condition === 'RAINY') {
+    basePressure = 998.0 + (Math.random() - 0.5) * 3.0; // Stormy low pressure
+  } else if (condition === 'CLOUDY') {
+    basePressure = 1008.0 + (Math.random() - 0.5) * 2.0;
+  } else if (condition === 'HEATWAVE') {
+    basePressure = 1009.0 + (Math.random() - 0.5) * 2.0;
+  } else {
+    // SUNNY
+    basePressure += (Math.random() - 0.5) * 1.5;
+  }
+
+  const pressure = parseFloat(basePressure.toFixed(1));
 
   return {
     hour,
     day_phase: getDayPhase(hour),
     temperature,
     humidity,
-    light
+    light,
+    barometric_pressure: pressure
   };
 }
 

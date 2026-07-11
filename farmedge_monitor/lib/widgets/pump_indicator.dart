@@ -54,7 +54,7 @@ class _Node extends StatelessWidget {
       children: [
         CircleAvatar(
           radius: 17,
-          backgroundColor: color.withValues(alpha: .18),
+          backgroundColor: color.withOpacity(.18),
           child: Icon(icon, color: color, size: 17),
         ),
         const SizedBox(height: 6),

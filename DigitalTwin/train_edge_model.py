@@ -1,50 +1,46 @@
-
 # pyrefly: ignore [missing-import]
 import numpy as np
 import os
+import pandas as pd
 
 # ==========================================
-# 1. GENERATE SYNTHETIC TRAINING DATA
+# 1. LOAD AND PRE-PROCESS REAL TRAINING DATA
 # ==========================================
-print("[DATA] Generating 5,000 agricultural sensor records...")
-np.random.seed(42)
-num_samples = 5000
+print("[DATA] Loading agricultural weather dataset...")
+csv_path = os.path.join(os.path.dirname(__file__), "backend/agriculture_dataset_with_target.csv")
+df = pd.read_csv(csv_path)
 
-# Features: [Temperature, Humidity, Soil Moisture, Light]
-raw_temp = np.random.uniform(15, 45, num_samples)
-raw_hum = np.random.uniform(20, 90, num_samples)
-raw_soil = np.random.uniform(0, 100, num_samples)
-raw_light = np.random.uniform(0, 4095, num_samples)
+num_samples = len(df)
+print(f"[DATA] Loaded {num_samples} records successfully.")
+
+# Features: [Air_Temperature, Humidity, Soil_Moisture, Solar_Radiation]
+raw_temp = df['Air_Temperature'].values
+raw_hum = df['Humidity'].values
+raw_moist = df['Soil_Moisture'].values
+raw_rad = df['Solar_Radiation'].values
 
 # Normalize inputs to [0, 1] range for Neural Network stability
+# Air_Temperature: 15 to 40
+# Humidity: 30 to 95
+# Soil_Moisture: 5 to 45
+# Solar_Radiation: 200 to 1000
 X = np.stack([
-    (raw_temp - 15.0) / 30.0,
-    (raw_hum - 20.0) / 70.0,
-    raw_soil / 100.0,
-    raw_light / 4095.0
+    (raw_temp - 15.0) / 25.0,
+    (raw_hum - 30.0) / 65.0,
+    (raw_moist - 5.0) / 40.0,
+    (raw_rad - 200.0) / 800.0
 ], axis=1)
 
 # Labels:
-# Class: 0 = HEALTHY, 1 = WATER_STRESSED, 2 = HEAT_STRESSED
-# RegTarget: Water requirement score (0 to 100)
-Y_class = np.zeros(num_samples, dtype=int)
-Y_reg = np.zeros(num_samples)
+# Class: Crop_Health (Healthy -> 0, Moderate_Stress -> 1, High_Stress -> 2)
+class_mapping = {'Healthy': 0, 'Moderate_Stress': 1, 'High_Stress': 2}
+Y_class = df['Crop_Health'].map(class_mapping).values
 
-for i in range(num_samples):
-    t, h, s, l = raw_temp[i], raw_hum[i], raw_soil[i], raw_light[i]
-    
-    # Logic matching realistic crop behaviors
-    if s < 35.0:
-        Y_class[i] = 1 # WATER_STRESSED
-        Y_reg[i] = (100.0 - s) * 0.9 + (t * 0.2) 
-    elif t > 37.0 and l > 2800:
-        Y_class[i] = 2 # HEAT_STRESSED
-        Y_reg[i] = (100.0 - s) * 0.4 + 30.0
-    else:
-        Y_class[i] = 0 # HEALTHY
-        Y_reg[i] = max(0, (60.0 - s) * 0.5)
-        
-    Y_reg[i] = np.clip(Y_reg[i], 0.0, 100.0)
+# RegTarget: Water requirement score (0 to 100)
+# Calculated physically from soil moisture (drier soil = more water required)
+# 45% moisture -> 0% water required. 5% moisture -> 100% water required.
+Y_reg = (45.0 - raw_moist) / 40.0 * 100.0
+Y_reg = np.clip(Y_reg, 0.0, 100.0)
 
 # Convert classes to one-hot encoding
 one_hot_classes = np.zeros((num_samples, 3))
@@ -83,7 +79,7 @@ def sigmoid(x):
 # ==========================================
 # 3. TRAINING LOOP (Backpropagation)
 # ==========================================
-print("[TRAIN] Training Multi-Task Neural Network...")
+print("[TRAIN] Training Multi-Task Crop Intelligence Neural Network...")
 lr = 0.05
 epochs = 2000
 
@@ -91,11 +87,11 @@ for epoch in range(epochs):
     # Forward Pass
     h = relu(np.dot(X, W1) + b1)
     
-    # Classification Branch
+    # Classification Branch (Crop Stress Level)
     logits_class = np.dot(h, W_class) + b_class
     pred_class = softmax(logits_class)
     
-    # Regression Branch
+    # Regression Branch (Water requirement score)
     logits_reg = np.dot(h, W_reg) + b_reg
     pred_reg = sigmoid(logits_reg)
     target_reg = (Y_reg / 100.0).reshape(-1, 1)
@@ -131,14 +127,14 @@ for epoch in range(epochs):
     if epoch % 400 == 0:
         class_preds = np.argmax(pred_class, axis=1)
         accuracy = np.mean(class_preds == Y_class) * 100
-        print(f"  Epoch {epoch:4d} | Total Loss: {total_loss:.4f} | Class Acc: {accuracy:.2f}% | Reg Loss (MSE): {reg_loss:.4f}")
+        print(f"  Epoch {epoch:4d} | Total Loss: {total_loss:.4f} | Crop Stress Acc: {accuracy:.2f}% | Water MSE: {reg_loss:.4f}")
 
 # Final validation
 h = relu(np.dot(X, W1) + b1)
 pred_class = softmax(np.dot(h, W_class) + b_class)
 class_preds = np.argmax(pred_class, axis=1)
 final_accuracy = np.mean(class_preds == Y_class) * 100
-print(f"[RESULT] Training Complete! Final Classification Accuracy: {final_accuracy:.2f}%")
+print(f"[RESULT] Training Complete! Final Crop Health Classification Accuracy: {final_accuracy:.2f}%")
 
 # ==========================================
 # 4. AUTO-GENERATE C++ WEIGHTS HEADER CODE
@@ -146,69 +142,69 @@ print(f"[RESULT] Training Complete! Final Classification Accuracy: {final_accura
 print("[EXPORT] Generating C++ Neural Network weights code...")
 
 cpp_code = f"""// Auto-generated Multi-Task Neural Network Weights for ESP32
-// Inputs: [Temp_norm, Hum_norm, Soil_norm, Light_norm]
-// Hidden Layer: {hidden_dim} Neurons (ReLU)
-// Outputs: Classification (3 classes: HEALTHY, WATER_STRESSED, HEAT_STRESSED) 
+// Inputs: [Temp_norm, Hum_norm, Moisture_norm, Solar_norm]
+// Hidden Layer: 5 Neurons (ReLU)
+// Outputs: Classification (3 classes: HEALTHY, MODERATE_STRESS, HIGH_STRESS) 
 //          & Regression (Water Requirement Score, 0-100)
 
 namespace EdgeML {{
     // Hidden Layer 1 Weights (Input to Hidden)
-    const float W1[{input_dim}][{hidden_dim}] = {{
+    const float W1[4][5] = {{
 """
 
 for row in W1:
     cpp_code += "        {" + ", ".join([f"{val:.6f}f" for val in row]) + "},\n"
 cpp_code += f"""    }};
     
-    const float b1[{hidden_dim}] = {{ {", ".join([f"{val:.6f}f" for val in b1[0]])} }};
+    const float b1[5] = {{ {", ".join([f"{val:.6f}f" for val in b1[0]])} }};
 
     // Classification Branch Weights (Hidden to Class Output)
-    const float W_class[{hidden_dim}][{class_dim}] = {{
+    const float W_class[5][3] = {{
 """
 for row in W_class:
     cpp_code += "        {" + ", ".join([f"{val:.6f}f" for val in row]) + "},\n"
 cpp_code += f"""    }};
     
-    const float b_class[{class_dim}] = {{ {", ".join([f"{val:.6f}f" for val in b_class[0]])} }};
+    const float b_class[3] = {{ {", ".join([f"{val:.6f}f" for val in b_class[0]])} }};
 
     // Regression Branch Weights (Hidden to Reg Output)
-    const float W_reg[{hidden_dim}][{reg_dim}] = {{
+    const float W_reg[5][1] = {{
 """
 for row in W_reg:
     cpp_code += "        {" + ", ".join([f"{val:.6f}f" for val in row]) + "},\n"
 cpp_code += f"""    }};
     
-    const float b_reg[{reg_dim}] = {{ {", ".join([f"{val:.6f}f" for val in b_reg[0]])} }};
+    const float b_reg[1] = {{ {", ".join([f"{val:.6f}f" for val in b_reg[0]])} }};
 
     // Forward Propagation logic executing at the Edge
     struct Prediction {{
-        int crop_health; // 0 = HEALTHY, 1 = WATER_STRESSED, 2 = HEAT_STRESSED
+        int crop_health; // 0 = HEALTHY, 1 = MODERATE_STRESS, 2 = HIGH_STRESS
         float water_requirement_score; // 0.0 to 100.0
     }};
 
-    Prediction predict(float temp, float hum, float soil, float light) {{
+    Prediction predict(float temp, float hum, float soilMoisture, float solarRadiation) {{
         // 1. Normalize Inputs
         float x[4];
-        x[0] = (temp - 15.0f) / 30.0f;
-        x[1] = (hum - 20.0f) / 70.0f;
-        x[2] = soil / 100.0f;
-        x[3] = light / 4095.0f;
+        x[0] = (temp - 15.0f) / 25.0f;
+        x[1] = (hum - 30.0f) / 65.0f;
+        x[2] = (soilMoisture - 5.0f) / 40.0f;
+        x[3] = (solarRadiation - 200.0f) / 800.0f;
 
         // 2. Feed Hidden Layer (Matrix multiply + Bias + ReLU activation)
-        float h[{hidden_dim}];
-        for (int j = 0; j < {hidden_dim}; j++) {{
+        float h[5];
+        for (int j = 0; j < 5; j++) {{
             float sum = b1[j];
-            for (int i = 0; i < {input_dim}; i++) {{
+            for (int i = 0; i < 4; i++) {{
                 sum += x[i] * W1[i][j];
             }}
             h[j] = (sum > 0.0f) ? sum : 0.0f; // ReLU
         }}
 
         // 3. Classification Outputs (Logits + Softmax prediction)
-        float c_logits[{class_dim}];
-        for (int j = 0; j < {class_dim}; j++) {{
+        float c_logits[3];
+        for (int j = 0; j < 3; j++) {{
             float sum = b_class[j];
-            for (int i = 0; i < {hidden_dim}; i++) {{
+            for (int i = 0; i < 5; i++) {{
                 sum += h[i] * W_class[i][j];
             }}
             c_logits[j] = sum;
@@ -216,7 +212,7 @@ cpp_code += f"""    }};
         // Find argmax for classification
         int best_class = 0;
         float max_logit = c_logits[0];
-        for (int j = 1; j < {class_dim}; j++) {{
+        for (int j = 1; j < 3; j++) {{
             if (c_logits[j] > max_logit) {{
                 max_logit = c_logits[j];
                 best_class = j;
@@ -225,7 +221,7 @@ cpp_code += f"""    }};
 
         // 4. Regression Output (Logit + Sigmoid activation)
         float r_logit = b_reg[0];
-        for (int i = 0; i < {hidden_dim}; i++) {{
+        for (int i = 0; i < 5; i++) {{
             r_logit += h[i] * W_reg[i][0];
         }}
         // Sigmoid mapping: 1 / (1 + exp(-x))
@@ -246,3 +242,18 @@ with open(header_path, "w") as f:
     f.write(cpp_code)
 
 print(f"[EXPORT] C++ Model successfully exported to: {header_path}")
+
+# Export weights to JSON for backend simulator forward pass sync
+import json
+weights_dict = {
+    "W1": W1.tolist(),
+    "b1": b1.tolist(),
+    "W_class": W_class.tolist(),
+    "b_class": b_class.tolist(),
+    "W_reg": W_reg.tolist(),
+    "b_reg": b_reg.tolist()
+}
+json_path = os.path.join(os.path.dirname(__file__), "backend/simulation/model_weights.json")
+with open(json_path, "w") as f:
+    json.dump(weights_dict, f, indent=2)
+print(f"[EXPORT] JSON model weights exported to: {json_path}")

@@ -9,6 +9,8 @@ import 'screens/farm_details/farm_details_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'screens/splash/splash_screen.dart';
 
+import 'screens/insights/insights_screen.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: FarmEdgeApp()));
@@ -26,6 +28,7 @@ class FarmEdgeApp extends ConsumerWidget {
         GoRoute(path: '/', builder: (_, __) => const SplashScreen()),
         GoRoute(path: '/dashboard', builder: (_, __) => const DashboardScreen()),
         GoRoute(path: '/details', builder: (_, __) => const FarmDetailsScreen()),
+        GoRoute(path: '/insights', builder: (_, __) => const InsightsScreen()),
         GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
       ],
     );

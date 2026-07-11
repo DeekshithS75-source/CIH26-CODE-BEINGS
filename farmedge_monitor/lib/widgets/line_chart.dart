@@ -28,7 +28,7 @@ class FarmLineChart extends StatelessWidget {
         gridData: FlGridData(
           drawVerticalLine: false,
           getDrawingHorizontalLine: (_) => FlLine(
-            color: Theme.of(context).colorScheme.outline.withValues(alpha: .13),
+            color: Theme.of(context).colorScheme.outline.withOpacity(.13),
             strokeWidth: 1,
             dashArray: [4, 4],
           ),
@@ -50,7 +50,7 @@ class FarmLineChart extends StatelessWidget {
         ),
         borderData: FlBorderData(
           show: true,
-          border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: .16)),
+          border: Border.all(color: Theme.of(context).colorScheme.outline.withOpacity(.16)),
         ),
         lineBarsData: [
           LineChartBarData(
@@ -59,7 +59,7 @@ class FarmLineChart extends StatelessWidget {
             color: color,
             barWidth: 2,
             dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(show: true, color: color.withValues(alpha: .12)),
+            belowBarData: BarAreaData(show: true, color: color.withOpacity(.12)),
           ),
         ],
       ),

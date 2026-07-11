@@ -80,6 +80,12 @@ void loop() {
 }
 
 // MQTT Message Receiver (Callback)
+// Pressure buffering for 3-hour trend calculation (12 ticks = 3 hours simulated time)
+float pressureHistory[12];
+int pressureCount = 0;
+int pressureIndex = 0;
+
+// MQTT Message Receiver (Callback)
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
   // Convert payload bytes to a string
   String message = "";
@@ -99,63 +105,76 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       int light = doc["light"];
       String irrigationStr = doc["irrigation"];
       String alertStr = doc["alert"];
+      float currentPressure = doc["barometric_pressure"];
+
+      // --- PRESSURE TREND CALCULATION ---
+      float pressureTrend = 0.0;
+      if (pressureCount > 0) {
+        int oldestIndex = (pressureCount < 12) ? 0 : pressureIndex;
+        pressureTrend = currentPressure - pressureHistory[oldestIndex];
+      }
+      
+      // Store current pressure in buffer
+      pressureHistory[pressureIndex] = currentPressure;
+      pressureIndex = (pressureIndex + 1) % 12;
+      if (pressureCount < 12) {
+        pressureCount++;
+      }
 
       Serial.println("-----------------------------------------");
-      Serial.printf("[TELEMETRY RECEIVED] Temp:%.1fC, Soil:%.1f%%\n", temperature, soilMoisture);
+      Serial.printf("[TELEMETRY RECEIVED] Temp:%.1fC, Soil:%.1f%%, Light:%d\n", temperature, soilMoisture, light);
       
       // ==========================================
       // 🧠 EDGE TINYML NEURAL NETWORK INFERENCE 🧠
       // ==========================================
-      // Pass raw sensor values directly to the forward propagation engine
-      EdgeML::Prediction pred = EdgeML::predict(temperature, humidity, soilMoisture, light);
+      // Pass raw sensor values directly to the inference engine (Temp, Hum, Soil, Light)
+      EdgeML::Prediction pred = EdgeML::predict(temperature, humidity, soilMoisture, (float)light);
       
-      // Map class indices to readable names
-      // 0 = HEALTHY, 1 = WATER_STRESSED, 2 = HEAT_STRESSED
-      String mlHealthStr = "HEALTHY";
-      if (pred.crop_health == 1) mlHealthStr = "WATER_STRESSED";
-      else if (pred.crop_health == 2) mlHealthStr = "HEAT_STRESSED";
+      // Map class indices to Crop Health Stress strings
+      String mlCropHealth = "HEALTHY";
+      if (pred.crop_health == 1) mlCropHealth = "WATER_STRESSED";
+      else if (pred.crop_health == 2) mlCropHealth = "HEAT_STRESSED";
 
       // Print TinyML Model results to Wokwi Serial Monitor
       Serial.println("[TINYML INTERFACE EXECUTION]");
-      Serial.printf("  - Inputs:   T:%.1f, H:%.1f, S:%.1f, L:%d\n", temperature, humidity, soilMoisture, light);
-      Serial.printf("  - ML Class: %s (Probabilities computed)\n", mlHealthStr.c_str());
-      Serial.printf("  - ML Score: %.2f%% (Predicted Water Need)\n", pred.water_requirement_score);
+      Serial.printf("  - Inputs:   T:%.1f, H:%.1f, SoilMoisture:%.1f, Light:%d\n", temperature, humidity, soilMoisture, light);
+      Serial.printf("  - ML Crop Stress Level: %s\n", mlCropHealth.c_str());
+      Serial.printf("  - ML Water Score: %.2f%% (Irrigation Need)\n", pred.water_requirement_score);
 
       // --- ML-DRIVEN ACTUATOR DECISIONS ---
       
-      // 1. Water control based on Crop stress predictions
-      if (pred.crop_health == 1 && !isIrrigating) {
-        Serial.println("[ML Decision] Crop is WATER STRESSED! Actuating Relay ON & Publishing.");
+      // 1. Water control based on Crop moisture levels (independent actuator logic)
+      if (soilMoisture < 15.0 && alertStr != "STORM_ALERT" && !isIrrigating) {
+        Serial.println("[ML Decision] Soil is dry & no storm threat. Actuating Relay ON & Publishing.");
         isIrrigating = true;
         digitalWrite(RELAY_PIN, HIGH);
-        publishEdgePrediction(isIrrigating, isAlertActive ? "HEAT_WARNING" : "NONE", mlHealthStr, pred.water_requirement_score);
+        publishEdgePrediction(isIrrigating, alertStr, mlCropHealth, pred.water_requirement_score);
       } 
-      else if (pred.crop_health == 0 && pred.water_requirement_score < 15.0 && isIrrigating) {
-        Serial.println("[ML Decision] Soil moisture restored! Actuating Relay OFF & Publishing.");
+      else if ((soilMoisture > 40.0 || alertStr == "STORM_ALERT") && isIrrigating) {
+        Serial.println("[ML Decision] Soil moisture restored (or storm incoming)! Actuating Relay OFF & Publishing.");
         isIrrigating = false;
         digitalWrite(RELAY_PIN, LOW);
-        publishEdgePrediction(isIrrigating, isAlertActive ? "HEAT_WARNING" : "NONE", mlHealthStr, pred.water_requirement_score);
+        publishEdgePrediction(isIrrigating, alertStr, mlCropHealth, pred.water_requirement_score);
       }
 
-      // 2. Alarm control based on Heat stress predictions
-      if (pred.crop_health == 2 && !isAlertActive) {
-        Serial.println("[ML Decision] Crop is HEAT STRESSED! Turning on Alarm LED.");
+      // 2. Alarm control based on Digital Twin Weather Alerts
+      if (alertStr == "STORM_ALERT" && !isAlertActive) {
+        Serial.println("[Warning] Storm warning active! Actuating Red Alert LED ON.");
         isAlertActive = true;
         digitalWrite(RED_LED_PIN, HIGH);
-        publishEdgePrediction(isIrrigating, "HEAT_WARNING", mlHealthStr, pred.water_requirement_score);
+        publishEdgePrediction(isIrrigating, "STORM_ALERT", mlCropHealth, pred.water_requirement_score);
       } 
-      else if (pred.crop_health == 0 && isAlertActive) {
-        Serial.println("[ML Decision] Temperature normalized. Turning off Alarm LED.");
+      else if (alertStr != "STORM_ALERT" && isAlertActive) {
+        Serial.println("[Warning] Storm warning cleared. Clearing Red Alert LED.");
         isAlertActive = false;
         digitalWrite(RED_LED_PIN, LOW);
-        publishEdgePrediction(isIrrigating, "NONE", mlHealthStr, pred.water_requirement_score);
+        publishEdgePrediction(isIrrigating, "NONE", mlCropHealth, pred.water_requirement_score);
       }
       
-      // If no state transitions occurred, still send updates periodically
-      // to keep dashboard AI meters completely in sync
+      // Send periodic sync updates
       static int telemetryCount = 0;
       if (++telemetryCount % 3 == 0) {
-         publishEdgePrediction(isIrrigating, isAlertActive ? "HEAT_WARNING" : "NONE", mlHealthStr, pred.water_requirement_score);
+         publishEdgePrediction(isIrrigating, alertStr, mlCropHealth, pred.water_requirement_score);
       }
       
       Serial.println("-----------------------------------------");
@@ -168,11 +187,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 }
 
 // Publish edge predictions and actuator statuses back to the Digital Twin
-void publishEdgePrediction(bool irrigationState, String alertType, String mlHealth, float mlScore) {
+void publishEdgePrediction(bool irrigationState, String alertType, String mlCropHealth, float mlScore) {
   DynamicJsonDocument doc(512);
   doc["irrigation"] = irrigationState;
   doc["alert"] = alertType;
-  doc["crop_health"] = mlHealth;
+  doc["crop_health"] = mlCropHealth;
   doc["water_requirement"] = mlScore;
 
   String jsonStr;

@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const router = express.Router();
 const simulator = require('../simulation/farmSimulator');
@@ -39,7 +40,15 @@ router.get('/farm-data', (req, res) => {
     soil_moisture: zone.soil_moisture,
     light: zone.light,
     irrigation: zone.irrigation ? "ON" : "OFF",
-    alert: zone.alert
+    alert: zone.alert,
+    barometric_pressure: state.weather.barometric_pressure,
+    battery: zone.battery,
+    battery_capacity_mah: zone.battery_capacity_mah,
+    current_draw_ma: zone.current_draw_ma,
+    battery_time_remaining_hours: zone.battery_time_remaining_hours,
+    crop_health: zone.crop_health || "HEALTHY",
+    water_requirement: zone.water_requirement || 0.0,
+    weather_forecast: zone.weather_forecast || "STABLE"
   });
 });
 
@@ -75,7 +84,15 @@ router.get('/farm-data/zone/:zoneId', (req, res) => {
     soil_moisture: zone.soil_moisture,
     light: zone.light,
     irrigation: zone.irrigation ? "ON" : "OFF",
-    alert: zone.alert
+    alert: zone.alert,
+    barometric_pressure: state.weather.barometric_pressure,
+    battery: zone.battery,
+    battery_capacity_mah: zone.battery_capacity_mah,
+    current_draw_ma: zone.current_draw_ma,
+    battery_time_remaining_hours: zone.battery_time_remaining_hours,
+    crop_health: zone.crop_health || "HEALTHY",
+    water_requirement: zone.water_requirement || 0.0,
+    weather_forecast: zone.weather_forecast || "STABLE"
   });
 });
 
@@ -146,6 +163,80 @@ router.post('/zone/:zoneId/alert', (req, res) => {
   res.json({ success: true, zone_id: zone.zone_id, alert: zone.alert });
 });
 
+// Function to fetch weather forecast from OpenWeatherMap API
+async function getRealTimeWeather() {
+  try {
+    const apiKey = process.env.OPENWEATHER_API_KEY;
+    if (!apiKey || apiKey === 'your_api_key_here') {
+      return { online: false }; // Fallback to local Edge ML forecast if key is not configured yet
+    }
+
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), 1500); // 1.5s timeout for fast response
+
+    const lat = process.env.FARM_LATITUDE || '12.9716';
+    const lon = process.env.FARM_LONGITUDE || '77.5946';
+    const baseUrl = process.env.WEATHER_API_URL || 'https://api.openweathermap.org/data/2.5/weather';
+    const url = `${baseUrl}?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+    
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(id);
+
+    if (!response.ok) throw new Error('OpenWeather API returned error status');
+    const data = await response.json();
+    
+    const weatherId = data.weather?.[0]?.id;
+    if (weatherId === undefined) return { online: false };
+
+    let forecast = 'STABLE';
+    // OpenWeather weather codes: 2xx = Thunderstorm, 3xx = Drizzle, 5xx = Rain
+    if (weatherId >= 200 && weatherId < 300) {
+      forecast = 'STORM_ALERT';
+    } else if ((weatherId >= 300 && weatherId < 400) || (weatherId >= 500 && weatherId < 600)) {
+      forecast = 'RAIN_COMING';
+    }
+
+    return {
+      online: true,
+      forecast,
+      temp: data.main?.temp,
+      humidity: data.main?.humidity,
+      rain: weatherId >= 200 && weatherId < 600
+    };
+  } catch (err) {
+    return { online: false };
+  }
+}
+
+/**
+ * GET /api/weather
+ * Returns the current weather and forecast.
+ * Falls back to local simulated Edge ML prediction if the external API is offline.
+ */
+router.get('/weather', async (req, res) => {
+  const state = simulator.loadState();
+  const apiWeather = await getRealTimeWeather();
+  
+  const weatherSource = apiWeather.online ? 'REAL_TIME_API' : 'EDGE_ML_FALLBACK';
+  
+  // Use first zone (Zone A) as the reference for simulated Edge ML forecast fallback
+  const fallbackForecast = state.zones[0]?.weather_forecast || 'STABLE';
+  const finalForecast = apiWeather.online ? apiWeather.forecast : fallbackForecast;
+
+  res.json({
+    condition: state.weather.condition,
+    ambient_temperature: state.weather.ambient_temperature,
+    ambient_humidity: state.weather.ambient_humidity,
+    barometric_pressure: state.weather.barometric_pressure,
+    api_temperature: apiWeather.online ? apiWeather.temp : state.weather.ambient_temperature,
+    api_humidity: apiWeather.online ? apiWeather.humidity : state.weather.ambient_humidity,
+    api_rain: apiWeather.online ? apiWeather.rain : (state.weather.condition === 'RAINY' || state.weather.condition === 'STORM'),
+    forecast: finalForecast,
+    source: weatherSource,
+    timestamp: new Date().toISOString()
+  });
+});
+
 /**
  * POST /api/weather
  * Dashboard command to change the simulated weather condition.
@@ -189,6 +280,20 @@ router.post('/esp32/telemetry', (req, res) => {
       light: result.zone.light
     }
   });
+});
+
+/**
+ * GET /api/weather/predict-tomorrow
+ * Predicts tomorrow's weather conditions and crop outcomes (crop health, irrigation) for a zone.
+ * Query param: `?zone=A` (defaults to A).
+ */
+router.get('/weather/predict-tomorrow', (req, res) => {
+  const zoneId = (req.query.zone || 'A').toUpperCase();
+  const prediction = simulator.predictTomorrowOutcome(zoneId);
+  if (!prediction) {
+    return res.status(404).json({ error: `Could not calculate prediction for Zone ${zoneId}` });
+  }
+  res.json(prediction);
 });
 
 module.exports = router;

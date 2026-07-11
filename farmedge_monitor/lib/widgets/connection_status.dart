@@ -19,9 +19,9 @@ class ConnectionStatus extends StatelessWidget {
       duration: const Duration(milliseconds: 250),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: .14),
+        color: color.withOpacity(.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: .35)),
+        border: Border.all(color: color.withOpacity(.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

@@ -1,249 +1,283 @@
 {
   "farm_id": "SMART_FARM_001",
   "simulation_time": {
-    "hour": 10,
+    "hour": 5,
     "minute": 30,
     "day_phase": "Morning"
   },
   "weather": {
-    "condition": "CLOUDY",
-    "ambient_temperature": 30.5,
-    "ambient_humidity": 57.9
+    "condition": "SUNNY",
+    "ambient_temperature": 20.5,
+    "ambient_humidity": 74.2,
+    "barometric_pressure": 1014,
+    "pressure_history": [
+      1012.1,
+      1012.7,
+      1013.4,
+      1012.4,
+      1012.2,
+      1012.3,
+      1013.2,
+      1013,
+      1013.5,
+      1014,
+      1013.1,
+      1014
+    ]
   },
   "zones": [
     {
       "zone_id": "A",
       "crop": "Tomato",
-      "temperature": 31,
-      "humidity": 55.9,
-      "soil_moisture": 0,
-      "light": 2293,
+      "temperature": 21.7,
+      "humidity": 38.3,
+      "soil_moisture": 24.8,
+      "light": 1280,
       "irrigation": false,
       "alert": "NONE",
-      "crop_health": "HEALTHY",
-      "water_requirement": 5.39196
+      "battery_capacity_mah": 0,
+      "current_draw_ma": 5,
+      "battery_time_remaining_hours": 0,
+      "battery": 0,
+      "crop_health": "HEAT_STRESSED",
+      "water_requirement": 50.5,
+      "weather_forecast": "STABLE"
     },
     {
       "zone_id": "B",
       "crop": "Rice",
-      "temperature": 29.5,
-      "humidity": 65.9,
-      "soil_moisture": 0,
-      "light": 2243,
+      "temperature": 24.9,
+      "humidity": 71.8,
+      "soil_moisture": 40.9,
+      "light": 1806,
       "irrigation": false,
-      "alert": "NONE"
+      "alert": "NONE",
+      "battery_capacity_mah": 0,
+      "current_draw_ma": 5,
+      "battery_time_remaining_hours": 0,
+      "battery": 0,
+      "crop_health": "HEALTHY",
+      "water_requirement": 10.3,
+      "weather_forecast": "STABLE"
     },
     {
       "zone_id": "C",
       "crop": "Wheat",
-      "temperature": 30.5,
-      "humidity": 53.9,
-      "soil_moisture": 0,
-      "light": 2293,
+      "temperature": 28.9,
+      "humidity": 71.9,
+      "soil_moisture": 23.9,
+      "light": 2672,
       "irrigation": false,
-      "alert": "NONE"
+      "alert": "NONE",
+      "battery_capacity_mah": 0,
+      "current_draw_ma": 5,
+      "battery_time_remaining_hours": 0,
+      "battery": 0,
+      "crop_health": "HEAT_STRESSED",
+      "water_requirement": 52.8,
+      "weather_forecast": "STABLE"
     }
   ],
   "logs": [
     {
-      "timestamp": "20:54:09",
+      "timestamp": "02:51:34",
+      "message": "[SIM-CONTROL] Zone A (Tomato) irrigation turned ON automatically (moisture 9.9%)"
+    },
+    {
+      "timestamp": "02:51:31",
+      "message": "[SIM-CONTROL] Zone C (Wheat) irrigation turned ON automatically (moisture 8.9%)"
+    },
+    {
+      "timestamp": "02:51:31",
+      "message": "[SIM-CONTROL] Zone B (Rice) irrigation turned ON automatically (moisture 14.7%)"
+    },
+    {
+      "timestamp": "02:51:31",
+      "message": "[WARNING] Zone A (Tomato) soil moisture critically dry: 22.6%!"
+    },
+    {
+      "timestamp": "02:51:31",
       "message": "Transitioning into Morning phase. Time is 05:00."
     },
     {
-      "timestamp": "20:52:33",
+      "timestamp": "02:51:28",
+      "message": "[WARNING] Zone C (Wheat) soil moisture critically dry: 24%!"
+    },
+    {
+      "timestamp": "02:51:25",
+      "message": "[WARNING] Zone B (Rice) soil moisture critically dry: 27.2%!"
+    },
+    {
+      "timestamp": "02:51:25",
+      "message": "[SIM-CONTROL] Zone A (Tomato) irrigation turned ON automatically (moisture 8.9%)"
+    },
+    {
+      "timestamp": "02:51:22",
+      "message": "[WARNING] Zone A (Tomato) soil moisture critically dry: 17.2%!"
+    },
+    {
+      "timestamp": "02:51:16",
+      "message": "[SIM-CONTROL] Zone C (Wheat) irrigation turned ON automatically (moisture 6.8%)"
+    },
+    {
+      "timestamp": "02:51:16",
+      "message": "[WARNING] Zone B (Rice) soil moisture critically dry: 15.3%!"
+    },
+    {
+      "timestamp": "02:51:10",
+      "message": "[SIM-CONTROL] Zone C (Wheat) irrigation turned ON automatically (moisture 5.6%)"
+    },
+    {
+      "timestamp": "02:51:10",
+      "message": "[WARNING] Zone C (Wheat) soil moisture critically dry: 5.6%!"
+    },
+    {
+      "timestamp": "02:51:10",
+      "message": "[SIM-CONTROL] Zone A (Tomato) irrigation turned ON automatically (moisture 7.6%)"
+    },
+    {
+      "timestamp": "02:51:01",
+      "message": "[SIM-CONTROL] Zone C (Wheat) irrigation turned ON automatically (moisture 14.9%)"
+    },
+    {
+      "timestamp": "02:51:01",
+      "message": "[SIM-CONTROL] Zone B (Rice) irrigation turned ON automatically (moisture 10.5%)"
+    },
+    {
+      "timestamp": "02:51:01",
+      "message": "[WARNING] Zone B (Rice) soil moisture critically dry: 10.5%!"
+    },
+    {
+      "timestamp": "02:51:01",
+      "message": "[SIM-CONTROL] Zone A (Tomato) irrigation turned ON automatically (moisture 6.9%)"
+    },
+    {
+      "timestamp": "02:50:55",
+      "message": "[WARNING] Zone B (Rice) soil moisture critically dry: 20.5%!"
+    },
+    {
+      "timestamp": "02:50:52",
+      "message": "[WARNING] Zone C (Wheat) soil moisture critically dry: 27.2%!"
+    },
+    {
+      "timestamp": "02:50:52",
+      "message": "[SIM-CONTROL] Zone A (Tomato) irrigation turned ON automatically (moisture 13%)"
+    },
+    {
+      "timestamp": "02:50:52",
+      "message": "[WARNING] Zone A (Tomato) soil moisture critically dry: 13%!"
+    },
+    {
+      "timestamp": "02:50:49",
+      "message": "[WARNING] Zone B (Rice) soil moisture critically dry: 12%!"
+    },
+    {
+      "timestamp": "02:50:43",
+      "message": "[WARNING] Zone C (Wheat) soil moisture critically dry: 16.2%!"
+    },
+    {
+      "timestamp": "02:50:43",
+      "message": "[SIM-CONTROL] Zone B (Rice) irrigation turned ON automatically (moisture 14.1%)"
+    },
+    {
+      "timestamp": "02:50:37",
+      "message": "[SIM-CONTROL] Zone B (Rice) irrigation turned ON automatically (moisture 5.7%)"
+    },
+    {
+      "timestamp": "02:50:37",
+      "message": "[WARNING] Zone B (Rice) soil moisture critically dry: 5.7%!"
+    },
+    {
+      "timestamp": "02:50:31",
+      "message": "[WARNING] Zone B battery is dead! Entering emergency low-power deep sleep."
+    },
+    {
+      "timestamp": "02:50:28",
+      "message": "[SIM-CONTROL] Zone B (Rice) irrigation turned ON automatically (moisture 6.6%)"
+    },
+    {
+      "timestamp": "02:50:25",
+      "message": "[SIM-CONTROL] Zone C (Wheat) irrigation turned ON automatically (moisture 11.9%)"
+    },
+    {
+      "timestamp": "02:50:22",
+      "message": "[WARNING] Zone C (Wheat) soil moisture critically dry: 21.4%!"
+    },
+    {
+      "timestamp": "02:50:19",
+      "message": "[SIM-CONTROL] Zone A (Tomato) irrigation turned ON automatically (moisture 12.3%)"
+    },
+    {
+      "timestamp": "02:50:16",
+      "message": "[SIM-CONTROL] Zone B (Rice) irrigation turned ON automatically (moisture 8.6%)"
+    },
+    {
+      "timestamp": "02:50:13",
+      "message": "[WARNING] Zone B (Rice) soil moisture critically dry: 26.4%!"
+    },
+    {
+      "timestamp": "02:50:13",
+      "message": "[SIM-CONTROL] Zone A (Tomato) irrigation turned ON automatically (moisture 13.5%)"
+    },
+    {
+      "timestamp": "02:50:13",
+      "message": "[WARNING] Zone A (Tomato) soil moisture critically dry: 13.5%!"
+    },
+    {
+      "timestamp": "02:50:07",
+      "message": "[SIM-CONTROL] Zone C (Wheat) irrigation turned ON automatically (moisture 8.1%)"
+    },
+    {
+      "timestamp": "02:50:04",
+      "message": "[WARNING] Zone B (Rice) soil moisture critically dry: 19.7%!"
+    },
+    {
+      "timestamp": "02:50:04",
+      "message": "[SIM-CONTROL] Zone A (Tomato) irrigation turned ON automatically (moisture 5.8%)"
+    },
+    {
+      "timestamp": "02:50:04",
+      "message": "[WARNING] Zone A (Tomato) soil moisture critically dry: 5.8%!"
+    },
+    {
+      "timestamp": "02:50:01",
+      "message": "[WARNING] Zone C (Wheat) soil moisture critically dry: 15.8%!"
+    },
+    {
+      "timestamp": "02:49:58",
+      "message": "[WARNING] Zone B (Rice) soil moisture critically dry: 14.5%!"
+    },
+    {
+      "timestamp": "02:49:58",
+      "message": "[WARNING] Zone A (Tomato) soil moisture critically dry: 29%!"
+    },
+    {
+      "timestamp": "02:49:55",
       "message": "Transitioning into Night phase. Time is 21:00."
     },
     {
-      "timestamp": "20:51:45",
-      "message": "Transitioning into Evening phase. Time is 17:00."
+      "timestamp": "02:49:52",
+      "message": "[WARNING] Zone C (Wheat) soil moisture critically dry: 25.6%!"
     },
     {
-      "timestamp": "20:50:32",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
+      "timestamp": "02:49:52",
+      "message": "[SIM-CONTROL] Zone A (Tomato) irrigation turned ON automatically (moisture 7.3%)"
     },
     {
-      "timestamp": "20:49:20",
-      "message": "Transitioning into Morning phase. Time is 05:00."
+      "timestamp": "02:49:49",
+      "message": "[SIM-CONTROL] Zone B (Rice) irrigation turned ON automatically (moisture 14.7%)"
     },
     {
-      "timestamp": "20:47:44",
-      "message": "Transitioning into Night phase. Time is 21:00."
+      "timestamp": "02:49:49",
+      "message": "[WARNING] Zone B (Rice) soil moisture critically dry: 14.7%!"
     },
     {
-      "timestamp": "20:46:56",
-      "message": "Transitioning into Evening phase. Time is 17:00."
+      "timestamp": "02:49:46",
+      "message": "[SIM-CONTROL] Zone A (Tomato) irrigation turned ON automatically (moisture 11.2%)"
     },
     {
-      "timestamp": "20:45:44",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "20:44:31",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "20:42:55",
-      "message": "Transitioning into Night phase. Time is 21:00."
-    },
-    {
-      "timestamp": "20:41:12",
-      "message": "Transitioning into Evening phase. Time is 17:00."
-    },
-    {
-      "timestamp": "20:15:55",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "20:14:43",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "20:13:07",
-      "message": "Transitioning into Night phase. Time is 21:00."
-    },
-    {
-      "timestamp": "20:12:19",
-      "message": "Transitioning into Evening phase. Time is 17:00."
-    },
-    {
-      "timestamp": "20:11:06",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "20:09:54",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "20:08:18",
-      "message": "Transitioning into Night phase. Time is 21:00."
-    },
-    {
-      "timestamp": "20:07:30",
-      "message": "Transitioning into Evening phase. Time is 17:00."
-    },
-    {
-      "timestamp": "20:06:18",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "20:05:05",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "20:03:29",
-      "message": "Transitioning into Night phase. Time is 21:00."
-    },
-    {
-      "timestamp": "20:02:41",
-      "message": "Transitioning into Evening phase. Time is 17:00."
-    },
-    {
-      "timestamp": "20:01:29",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "20:00:17",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "19:58:40",
-      "message": "Transitioning into Night phase. Time is 21:00."
-    },
-    {
-      "timestamp": "19:57:52",
-      "message": "Transitioning into Evening phase. Time is 17:00."
-    },
-    {
-      "timestamp": "19:56:40",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "19:55:28",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "19:53:50",
-      "message": "Transitioning into Night phase. Time is 21:00."
-    },
-    {
-      "timestamp": "19:53:02",
-      "message": "Transitioning into Evening phase. Time is 17:00."
-    },
-    {
-      "timestamp": "19:51:49",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "19:50:37",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "19:49:01",
-      "message": "Transitioning into Night phase. Time is 21:00."
-    },
-    {
-      "timestamp": "19:48:13",
-      "message": "Transitioning into Evening phase. Time is 17:00."
-    },
-    {
-      "timestamp": "19:47:01",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "19:45:49",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "19:44:12",
-      "message": "Transitioning into Night phase. Time is 21:00."
-    },
-    {
-      "timestamp": "19:43:24",
-      "message": "Transitioning into Evening phase. Time is 17:00."
-    },
-    {
-      "timestamp": "19:42:12",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "19:41:00",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "19:39:24",
-      "message": "Transitioning into Night phase. Time is 21:00."
-    },
-    {
-      "timestamp": "19:38:36",
-      "message": "Transitioning into Evening phase. Time is 17:00."
-    },
-    {
-      "timestamp": "19:37:23",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "19:36:11",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "19:34:35",
-      "message": "Transitioning into Night phase. Time is 21:00."
-    },
-    {
-      "timestamp": "19:33:47",
-      "message": "Transitioning into Evening phase. Time is 17:00."
-    },
-    {
-      "timestamp": "19:32:35",
-      "message": "Transitioning into Afternoon phase. Time is 11:00."
-    },
-    {
-      "timestamp": "19:31:22",
-      "message": "Transitioning into Morning phase. Time is 05:00."
-    },
-    {
-      "timestamp": "19:29:46",
-      "message": "Transitioning into Night phase. Time is 21:00."
+      "timestamp": "02:49:43",
+      "message": "[WARNING] Zone A (Tomato) soil moisture critically dry: 28.9%!"
     }
   ]
 }
