@@ -24,3 +24,6 @@ __pycache__/
 *.njsproj
 *.sln
 *.suo
+
+# Dynamic simulator states
+DigitalTwin/backend/data/farmState.json
