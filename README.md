@@ -1,4 +1,4 @@
-# FarmEdge Monitor
+# CIH26 — FarmEdge Monitor
 
 Production-style offline Flutter Android monitoring dashboard for an ESP32 farm controller.
 
