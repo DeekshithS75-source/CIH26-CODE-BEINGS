@@ -32,6 +32,7 @@ Rural farms face **unreliable internet**, making cloud-dependent smart agricultu
 | ❌ Fails without internet | ✅ Fully autonomous offline |
 | ❌ English-only dashboards | ✅ Voice assistant in **English, Malayalam & Kannada** |
 | ❌ Blind remote control | ✅ **Digital Twin** mirrors farm state in real time |
+| ❌ No advance weather insight | ✅ **Edge ML weather prediction** + OpenWeather fusion |
 
 ---
 
@@ -44,6 +45,9 @@ Rural farms face **unreliable internet**, making cloud-dependent smart agricultu
 │  ┌──────────┐   Autonomous    ┌────────────┐            │
 │  │ Sensors  │ ──→ Inference ──→│ Relay/Pump │            │
 │  └──────────┘   (< 50ms)      └────────────┘            │
+│         │         ↓                                      │
+│         │    Weather Trend                               │
+│         │    (Pressure Delta)                            │
 │         │                                                │
 │         └──── MQTT (HiveMQ) ────┐                       │
 └─────────────────────────────────┼───────────────────────┘
@@ -51,8 +55,8 @@ Rural farms face **unreliable internet**, making cloud-dependent smart agricultu
 ┌─────────────────────────────────┼───────────────────────┐
 │              DIGITAL TWIN LAYER (Node.js)               │
 │  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐  │
-│  │ Farm State   │  │ AI Voice Chat│  │ Weather API    │  │
-│  │ Simulator    │  │ (Groq/Ollama)│  │ (OpenWeather)  │  │
+│  │ Farm State   │  │ AI Voice Chat│  │ Weather Fusion │  │
+│  │ Simulator    │  │ (Groq/Ollama)│  │ Edge+OpenWeather│ │
 │  └──────┬──────┘  └──────┬───────┘  └───────┬────────┘  │
 │         └────────────────┼──────────────────┘            │
 │                    REST API (:3001)                       │
@@ -61,7 +65,7 @@ Rural farms face **unreliable internet**, making cloud-dependent smart agricultu
 ┌─────────────────────────────────┼───────────────────────┐
 │            PRESENTATION LAYER (Flutter Web)              │
 │  Live Dashboard • Telemetry Charts • Voice Assistant     │
-│  Semi-Automated Irrigation Prompts • Multilingual UI     │
+│  Semi-Automated Irrigation • Weather Prediction Card     │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -98,6 +102,12 @@ Rural farms face **unreliable internet**, making cloud-dependent smart agricultu
 - Predicts **crop health** and **water requirement** scores in real-time
 - Runs inference in **< 50ms** directly on ESP32 — no cloud roundtrip
 
+### 🌦️ Weather Prediction (Edge ML + Cloud Fusion)
+- **Edge ML forecasting**: The neural network analyzes local sensor patterns (temperature trends, humidity shifts, barometric pressure drops) to predict weather — **works fully offline**
+- **Cloud fusion**: When internet is available, real-time data from **OpenWeather API** is blended with edge predictions for improved accuracy
+- **Tomorrow's forecast card**: Dashboard displays a one-tap prediction with expected temperature, humidity, rainfall probability, and irrigation advice
+- Predictions classified as `STABLE`, `RAIN_COMING`, or `STORM_ALERT` — automatically pauses irrigation before storms to save water
+
 ### 🪞 Live Digital Twin
 - Server-side simulation mirrors physical farm state
 - Synchronized via **MQTT** (HiveMQ public broker)
@@ -128,6 +138,7 @@ Rural farms face **unreliable internet**, making cloud-dependent smart agricultu
 | **Communication** | MQTT over HiveMQ public broker |
 | **Backend** | Node.js, Express.js |
 | **AI/LLM** | Groq (LLaMA 3.3 70B), Ollama (Qwen3 4B), Sarvam AI TTS |
+| **Weather** | OpenWeather API + Edge ML barometric prediction |
 | **Frontend** | Flutter Web, Riverpod, fl_chart, go_router |
 | **Simulation** | Wokwi (ESP32 virtual hardware) |
 
@@ -175,7 +186,7 @@ Open the Wokwi project → Upload firmware from `DigitalTwin/wokwi/` → Run sim
 |--------|----------|-------------|
 | `GET` | `/status` | Live farm telemetry for a zone |
 | `GET` | `/api/voice-chat?query=...` | AI voice assistant query |
-| `GET` | `/api/weather/predict-tomorrow?zone=A` | ML weather prediction |
+| `GET` | `/api/weather/predict-tomorrow?zone=A` | ML + cloud fused weather prediction |
 | `POST` | `/api/trigger-mode` | Toggle irrigation mode |
 | `POST` | `/api/zone/:id/irrigation` | Manual pump control |
 | `POST` | `/api/zone/:id/alert` | Set/clear zone alerts |
@@ -190,6 +201,7 @@ Open the Wokwi project → Upload firmware from `DigitalTwin/wokwi/` → Run sim
 - 🔔 SMS alerts for offline farmers
 - 🚁 Drone-assisted field monitoring
 
+---
 
 <p align="center">
   <b>🏆 Problem Statement 4 — Edge-Based Crop Monitoring</b><br/>
