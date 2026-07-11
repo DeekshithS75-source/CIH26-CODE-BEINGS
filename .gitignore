@@ -1,0 +1,26 @@
+# Dependency directories
+node_modules/
+.venv/
+
+# Build directories
+.next/
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.development
+.env.staging
+
+# Local python / node / build / IDE files
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+*.suo
+*.ntvsca
+*.njsproj
+*.sln
+*.suo

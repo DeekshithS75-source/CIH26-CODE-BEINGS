@@ -1,0 +1,14 @@
+{
+  "dependencies": {
+    "ngrok": "^5.0.0-beta.2",
+    "numpy": "^0.0.1"
+  },
+  "scripts": {
+    "tunnel": "node tunnel.js",
+    "tunnel:lt": "node tunnel.js lt",
+    "tunnel:ngrok": "node tunnel.js ngrok",
+    "backend": "npm start --prefix backend",
+    "dev:backend": "npm start --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend"
+  }
+}

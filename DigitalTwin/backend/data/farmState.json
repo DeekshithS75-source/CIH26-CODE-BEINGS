@@ -1,0 +1,249 @@
+{
+  "farm_id": "SMART_FARM_001",
+  "simulation_time": {
+    "hour": 10,
+    "minute": 30,
+    "day_phase": "Morning"
+  },
+  "weather": {
+    "condition": "CLOUDY",
+    "ambient_temperature": 30.5,
+    "ambient_humidity": 57.9
+  },
+  "zones": [
+    {
+      "zone_id": "A",
+      "crop": "Tomato",
+      "temperature": 31,
+      "humidity": 55.9,
+      "soil_moisture": 0,
+      "light": 2293,
+      "irrigation": false,
+      "alert": "NONE",
+      "crop_health": "HEALTHY",
+      "water_requirement": 5.39196
+    },
+    {
+      "zone_id": "B",
+      "crop": "Rice",
+      "temperature": 29.5,
+      "humidity": 65.9,
+      "soil_moisture": 0,
+      "light": 2243,
+      "irrigation": false,
+      "alert": "NONE"
+    },
+    {
+      "zone_id": "C",
+      "crop": "Wheat",
+      "temperature": 30.5,
+      "humidity": 53.9,
+      "soil_moisture": 0,
+      "light": 2293,
+      "irrigation": false,
+      "alert": "NONE"
+    }
+  ],
+  "logs": [
+    {
+      "timestamp": "20:54:09",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "20:52:33",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "20:51:45",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "20:50:32",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "20:49:20",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "20:47:44",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "20:46:56",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "20:45:44",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "20:44:31",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "20:42:55",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "20:41:12",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "20:15:55",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "20:14:43",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "20:13:07",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "20:12:19",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "20:11:06",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "20:09:54",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "20:08:18",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "20:07:30",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "20:06:18",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "20:05:05",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "20:03:29",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "20:02:41",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "20:01:29",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "20:00:17",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "19:58:40",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "19:57:52",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "19:56:40",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "19:55:28",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "19:53:50",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "19:53:02",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "19:51:49",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "19:50:37",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "19:49:01",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "19:48:13",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "19:47:01",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "19:45:49",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "19:44:12",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "19:43:24",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "19:42:12",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "19:41:00",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "19:39:24",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "19:38:36",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "19:37:23",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "19:36:11",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "19:34:35",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    },
+    {
+      "timestamp": "19:33:47",
+      "message": "Transitioning into Evening phase. Time is 17:00."
+    },
+    {
+      "timestamp": "19:32:35",
+      "message": "Transitioning into Afternoon phase. Time is 11:00."
+    },
+    {
+      "timestamp": "19:31:22",
+      "message": "Transitioning into Morning phase. Time is 05:00."
+    },
+    {
+      "timestamp": "19:29:46",
+      "message": "Transitioning into Night phase. Time is 21:00."
+    }
+  ]
+}
