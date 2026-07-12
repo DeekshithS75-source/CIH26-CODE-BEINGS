@@ -41,7 +41,7 @@ Rural farms face **unreliable internet**, making cloud-dependent smart agricultu
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    EDGE LAYER (ESP32)                    │
-│  DHT22 + Soil Sensor + BMP280 → TinyML Neural Network   │
+│  DHT22 + Soil Sensor + BMP280 → CESI algorithm  │
 │  ┌──────────┐   Autonomous    ┌────────────┐            │
 │  │ Sensors  │ ──→ Inference ──→│ Relay/Pump │            │
 │  └──────────┘   (< 50ms)      └────────────┘            │
