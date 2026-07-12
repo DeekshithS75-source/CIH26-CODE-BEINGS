@@ -1,7 +1,6 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
-#include "model_weights.h" // Include our trained Neural Network weights & inference code
 
 // ==========================================
 // CONFIGURATION
@@ -161,21 +160,44 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       Serial.printf("[TELEMETRY RECEIVED] Temp:%.1fC, Soil:%.1f%%, Light:%d, Trigger:%s\n", temperature, soilMoisture, light, triggerMode.c_str());
       
       // ==========================================
-      // 🧠 EDGE TINYML NEURAL NETWORK INFERENCE 🧠
+      // 🌿 CROP ENVIRONMENTAL STRESS INDEX (CESI) ALGORITHM 🌿
       // ==========================================
-      // Pass raw sensor values directly to the inference engine (Temp, Hum, Soil, Light)
-      EdgeML::Prediction pred = EdgeML::predict(temperature, humidity, soilMoisture, (float)light);
+      // We use an Explainable Weighted Scoring Algorithm that calculates a stress 
+      // score based on deviations from ideal agricultural conditions.
       
-      // Map class indices to Crop Health Stress strings
+      // 1. Define ideal conditions
+      float idealTemp = 25.0;
+      float idealMoisture = 40.0;
+      
+      // 2. Calculate Deviation Penalties (How far are we from ideal?)
+      float tempPenalty = (temperature > idealTemp) ? (temperature - idealTemp) * 2.0 : 0;
+      float moisturePenalty = (soilMoisture < idealMoisture) ? (idealMoisture - soilMoisture) * 1.5 : 0;
+      
+      // 3. Calculate Final Stress Score (0 to 100)
+      float stressScore = tempPenalty + moisturePenalty;
+      if (stressScore > 100.0) stressScore = 100.0;
+      
+      // 4. Map Score to Health Status
       String mlCropHealth = "HEALTHY";
-      if (pred.crop_health == 1) mlCropHealth = "WATER_STRESSED";
-      else if (pred.crop_health == 2) mlCropHealth = "HEAT_STRESSED";
+      if (stressScore > 60.0) {
+          mlCropHealth = "HEAT_STRESSED";
+      } else if (stressScore > 30.0) {
+          mlCropHealth = "WATER_STRESSED";
+      }
+      
+      // 5. Calculate Water Requirement Percentage
+      float water_req_score = 0.0;
+      if (soilMoisture < 45.0) {
+          water_req_score = ((45.0 - soilMoisture) / 40.0) * 100.0;
+          if (temperature > 30.0) water_req_score += 10.0; // Heat compensation
+      }
+      if (water_req_score > 100.0) water_req_score = 100.0;
 
-      // Print TinyML Model results to Wokwi Serial Monitor
-      Serial.println("[TINYML INTERFACE EXECUTION]");
-      Serial.printf("  - Inputs:   T:%.1f, H:%.1f, SoilMoisture:%.1f, Light:%d\n", temperature, humidity, soilMoisture, light);
-      Serial.printf("  - ML Crop Stress Level: %s\n", mlCropHealth.c_str());
-      Serial.printf("  - ML Water Score: %.2f%% (Irrigation Need)\n", pred.water_requirement_score);
+      // Print Algorithmic results to Wokwi Serial Monitor
+      Serial.println("[CESI ALGORITHM EXECUTION]");
+      Serial.printf("  - Inputs:   T:%.1f, SoilMoisture:%.1f\n", temperature, soilMoisture);
+      Serial.printf("  - Stress Score: %.1f -> Class: %s\n", stressScore, mlCropHealth.c_str());
+      Serial.printf("  - Water Need Score: %.2f%%\n", water_req_score);
 
       // --- ML-DRIVEN ACTUATOR DECISIONS ---
       
@@ -185,11 +207,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
           Serial.println("[ML Decision] Soil is dry. AUTOMATED: Actuating Relay ON & Publishing.");
           isIrrigating = true;
           digitalWrite(RELAY_PIN, HIGH);
-          publishEdgePrediction(isIrrigating, alertStr, mlCropHealth, pred.water_requirement_score);
+          publishEdgePrediction(isIrrigating, alertStr, mlCropHealth, water_req_score);
         } else {
           if (alertStr != "NEEDS_WATER") {
             Serial.println("[ML Decision] Soil is dry. CONFIRMATION: Setting alert NEEDS_WATER & Publishing.");
-            publishEdgePrediction(isIrrigating, "NEEDS_WATER", mlCropHealth, pred.water_requirement_score);
+            publishEdgePrediction(isIrrigating, "NEEDS_WATER", mlCropHealth, water_req_score);
           }
         }
       } 
@@ -197,7 +219,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
         Serial.println("[ML Decision] Soil moisture restored (or storm incoming)! Actuating Relay OFF & Publishing.");
         isIrrigating = false;
         digitalWrite(RELAY_PIN, LOW);
-        publishEdgePrediction(isIrrigating, alertStr == "STORM_ALERT" ? "STORM_ALERT" : "NONE", mlCropHealth, pred.water_requirement_score);
+        publishEdgePrediction(isIrrigating, alertStr == "STORM_ALERT" ? "STORM_ALERT" : "NONE", mlCropHealth, water_req_score);
       }
 
       // 2. Red Alert LED is synced at the beginning of the callback
@@ -205,7 +227,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       // Send periodic sync updates
       static int telemetryCount = 0;
       if (++telemetryCount % 3 == 0) {
-         publishEdgePrediction(isIrrigating, alertStr, mlCropHealth, pred.water_requirement_score);
+         publishEdgePrediction(isIrrigating, alertStr, mlCropHealth, water_req_score);
       }
       
       Serial.println("-----------------------------------------");

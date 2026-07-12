@@ -138,6 +138,21 @@ export default function Home() {
     }
   };
 
+  const handleSetSimulationSpeed = async (speed) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/simulation-speed`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ speed })
+      });
+      if (res.ok) {
+        await fetchFarmState(false);
+      }
+    } catch (err) {
+      console.error('Error setting simulation speed:', err);
+    }
+  };
+
   if (loading && !error) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', justifyContent: 'center', alignItems: 'center', backgroundColor: '#040d0a' }}>

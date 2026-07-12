@@ -125,6 +125,9 @@ router.post('/zone/:zoneId/irrigation', (req, res) => {
   }
 
   simulator.saveState();
+  if (global.publishTelemetry) {
+    global.publishTelemetry(zone.zone_id);
+  }
   res.json({ success: true, zone_id: zone.zone_id, irrigation: zone.irrigation });
 });
 
@@ -160,6 +163,9 @@ router.post('/zone/:zoneId/alert', (req, res) => {
   }
 
   simulator.saveState();
+  if (global.publishTelemetry) {
+    global.publishTelemetry(zone.zone_id);
+  }
   res.json({ success: true, zone_id: zone.zone_id, alert: zone.alert });
 });
 
@@ -185,6 +191,12 @@ router.post('/trigger-mode', (req, res) => {
       if (z.alert === 'NEEDS_WATER') z.alert = 'NONE';
     });
     simulator.saveState();
+  }
+
+  if (global.publishTelemetry) {
+    state.zones.forEach(z => {
+      global.publishTelemetry(z.zone_id);
+    });
   }
 
   res.json({ success: true, smart_trigger_mode: state.smart_trigger_mode });

@@ -137,6 +137,14 @@ void queryTelemetry() {
         float soilMoisture = doc["soil_moisture"];
         int light = doc["light"];
         String irrigationStr = doc["irrigation"];
+         
+        // --- DIGITAL TWIN ACTUATOR SYNC ---
+        bool externalIrrigation = (irrigationStr == "ON");
+        if (externalIrrigation != isIrrigating) {
+          Serial.printf("[SYNC] Setting local pump state to %s\n", irrigationStr.c_str());
+          isIrrigating = externalIrrigation;
+          digitalWrite(RELAY_PIN, isIrrigating ? HIGH : LOW);
+        }
         
         // Print parsed data to Serial
         Serial.println("-----------------------------------------");

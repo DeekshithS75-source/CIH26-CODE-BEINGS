@@ -45,7 +45,7 @@ function predictCropMetrics(temp, hum, soilMoisture, solarRadiation) {
   const h = [];
   const W1 = modelWeights.W1;
   const b1 = modelWeights.b1[0] || modelWeights.b1;
-  
+
   for (let j = 0; j < 5; j++) {
     let sum = b1[j];
     for (let i = 0; i < 4; i++) {
@@ -58,7 +58,7 @@ function predictCropMetrics(temp, hum, soilMoisture, solarRadiation) {
   const c_logits = [];
   const W_class = modelWeights.W_class;
   const b_class = modelWeights.b_class[0] || modelWeights.b_class;
-  
+
   for (let j = 0; j < 3; j++) {
     let sum = b_class[j];
     for (let i = 0; i < 5; i++) {
@@ -66,7 +66,7 @@ function predictCropMetrics(temp, hum, soilMoisture, solarRadiation) {
     }
     c_logits[j] = sum;
   }
-  
+
   // Argmax
   let bestClass = 0;
   let maxLogit = c_logits[0];
@@ -80,7 +80,7 @@ function predictCropMetrics(temp, hum, soilMoisture, solarRadiation) {
   // 4. Regression Output (Sigmoid mapping)
   const W_reg = modelWeights.W_reg;
   const b_reg = modelWeights.b_reg[0] || modelWeights.b_reg;
-  
+
   let r_logit = b_reg[0];
   for (let i = 0; i < 5; i++) {
     r_logit += h[i] * W_reg[i][0];
@@ -112,7 +112,7 @@ function parseAgricultureCsv() {
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
       if (!line) continue;
-      
+
       const values = line.split(',');
       if (values.length !== headers.length) continue;
 
@@ -183,12 +183,12 @@ function saveState() {
 // Add a log entry with local time format
 function addLog(message) {
   if (!currentState) loadState();
-  
+
   const now = new Date();
   const timestamp = now.toTimeString().split(' ')[0]; // HH:MM:SS
-  
+
   currentState.logs.unshift({ timestamp, message });
-  
+
   // Keep logs at a reasonable size (max 50)
   if (currentState.logs.length > 50) {
     currentState.logs.pop();
@@ -198,7 +198,7 @@ function addLog(message) {
 // Update weather conditions (can be triggered from dashboard)
 function setWeatherCondition(condition) {
   if (!currentState) loadState();
-  
+
   const validConditions = ['SUNNY', 'CLOUDY', 'RAINY', 'HEATWAVE', 'STORM'];
   if (validConditions.includes(condition)) {
     currentState.weather.condition = condition;
@@ -212,7 +212,7 @@ function setWeatherCondition(condition) {
 // Perform a single simulation step
 function tickSimulation() {
   const state = loadState();
-  
+
   // Advance dataset record index
   if (csvRecords.length > 0) {
     csvRecordIndex = (csvRecordIndex + 1) % csvRecords.length;
@@ -264,17 +264,17 @@ function tickSimulation() {
     // Determine power metrics first
     let isIrrigating = zone.irrigation;
     let currentDraw = isIrrigating ? 250.0 : 80.0;
-    
+
     // Solar panel generation: peak is 180mA at 4095 light
     const lightVal = zone.light !== undefined ? zone.light : 800;
     const solarGeneration = (lightVal / 4095.0) * 180.0;
-    
+
     const capacity = zone.battery_capacity_mah !== undefined ? zone.battery_capacity_mah : 2000.0;
-    
+
     // Net capacity change: 15 minutes = 0.25 hours
     const capacityChange = (solarGeneration - currentDraw) * 0.25;
     let nextCapacity = Math.min(2000.0, Math.max(0.0, capacity + capacityChange));
-    
+
     if (nextCapacity <= 0.0) {
       isIrrigating = false;
       currentDraw = 5.0; // Deep Sleep standby if battery dies
@@ -284,7 +284,7 @@ function tickSimulation() {
         addLog(`[WARNING] Zone ${zone.zone_id} battery is dead! Entering emergency low-power deep sleep.`);
       }
     }
-    
+
     const timeRemaining = nextCapacity > 0.0 ? parseFloat((nextCapacity / currentDraw).toFixed(1)) : 0.0;
     const batteryPercent = parseFloat(((nextCapacity / 2000.0) * 100.0).toFixed(1));
 
@@ -300,7 +300,7 @@ function tickSimulation() {
         battery: batteryPercent
       };
     }
-    
+
     // Load baseline data from the real CSV dataset (each zone gets an offset index)
     let record = null;
     if (csvRecords.length > 0) {
@@ -311,7 +311,7 @@ function tickSimulation() {
     // Baseline variables from dataset
     let zoneTemp = record ? parseFloat(Number(record.Air_Temperature).toFixed(1)) : parseFloat((ambientWeather.temperature).toFixed(1));
     let zoneHum = record ? parseFloat(Number(record.Humidity).toFixed(1)) : parseFloat((ambientWeather.humidity).toFixed(1));
-    
+
     // Solar radiation in CSV ranges 200-1000. Map it to 12-bit ADC light range (0-4095) for ESP32 compatibility:
     let rawRad = record ? parseFloat(record.Solar_Radiation) : 800.0;
     let zoneLight = Math.round((rawRad / 1000.0) * 4095.0);
@@ -337,7 +337,7 @@ function tickSimulation() {
     let forecast = zone.weather_forecast || 'STABLE';
     let waterNeed = zone.water_requirement || 0.0;
     let cropHealth = zone.crop_health || 'HEALTHY';
-    
+
     if (pressureTrend < -2.5 && currentPressure < 995.0) {
       forecast = 'STORM_ALERT';
       waterNeed = 0.0;
@@ -351,7 +351,7 @@ function tickSimulation() {
       // Neural Network Regression: (45 - Moisture) / 40 * 100
       waterNeed = ((45.0 - nextMoisture) / 40.0) * 100.0;
       waterNeed = parseFloat(Math.max(0.0, Math.min(100.0, waterNeed)).toFixed(1));
-      
+
       // Neural Network Classification: Crop_Health from dataset or fallback
       if (record && record.Crop_Health) {
         if (record.Crop_Health === 'High_Stress') {

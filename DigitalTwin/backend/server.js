@@ -12,6 +12,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Global simulation timer configuration
+let tickIntervalMs = 60000; // Default 1 minute
+let tickTimerId = null;
+
 // Serve API Routes
 app.use('/api', farmRouter);
 
@@ -43,6 +47,8 @@ app.get('/status', (req, res) => {
     currentDraw: zone.current_draw_ma || 80.0,
     alert: zone.alert || 'NONE',
     smart_trigger_mode: state.smart_trigger_mode || 'AUTOMATED',
+    simulation_speed: tickIntervalMs === 3000 ? "DEMO" : "REALTIME",
+    simulation_interval: tickIntervalMs,
     lastUpdated: new Date().toISOString()
   });
 });
@@ -138,41 +144,79 @@ mqttClient.on('message', (topic, message) => {
 // Run initial tick to set things up on boot
 simulator.tickSimulation();
 
-// Start simulation ticks: runs every 3000ms (3 seconds)
-const TICK_INTERVAL_MS = 3000;
-setInterval(() => {
+// Global function to broadcast telemetry for a zone instantly over MQTT
+function publishTelemetry(zoneId) {
   try {
-    const updatedState = simulator.tickSimulation();
-    const time = updatedState.simulation_time;
+    const state = simulator.loadState();
+    const zone = state.zones.find(z => z.zone_id === zoneId.toUpperCase());
+    if (!zone) return;
+    const time = state.simulation_time;
+    const telemetryTopic = `smartfarm/zones/${zone.zone_id}/telemetry`;
+    const telemetryData = {
+      timestamp: `${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}`,
+      zone_id: zone.zone_id,
+      crop: zone.crop,
+      temperature: zone.temperature,
+      humidity: zone.humidity,
+      soil_moisture: zone.soil_moisture,
+      light: zone.light,
+      irrigation: zone.irrigation ? 'ON' : 'OFF',
+      alert: zone.alert,
+      smart_trigger_mode: state.smart_trigger_mode || 'AUTOMATED'
+    };
     
-    // Log occasionally on the server console
-    if (time.minute === 0) {
-      console.log(`[Sim Tick] Time ${time.hour.toString().padStart(2, '0')}:00 - Temp: ${updatedState.weather.ambient_temperature}°C - Weather: ${updatedState.weather.condition}`);
-    }
-
-    // Publish telemetry for each zone to MQTT so Wokwi ESP32 can consume it
-    updatedState.zones.forEach(zone => {
-      const telemetryTopic = `smartfarm/zones/${zone.zone_id}/telemetry`;
-      const telemetryData = {
-        timestamp: `${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}`,
-        zone_id: zone.zone_id,
-        crop: zone.crop,
-        temperature: zone.temperature,
-        humidity: zone.humidity,
-        soil_moisture: zone.soil_moisture,
-        light: zone.light,
-        irrigation: zone.irrigation ? 'ON' : 'OFF',
-        alert: zone.alert,
-        smart_trigger_mode: updatedState.smart_trigger_mode || 'AUTOMATED'
-      };
-      
-      mqttClient.publish(telemetryTopic, JSON.stringify(telemetryData));
-    });
-
-  } catch (error) {
-    console.error('Error during simulation loop execution:', error);
+    mqttClient.publish(telemetryTopic, JSON.stringify(telemetryData));
+  } catch (err) {
+    console.error(`Error publishing MQTT telemetry for zone ${zoneId}:`, err);
   }
-}, TICK_INTERVAL_MS);
+}
+global.publishTelemetry = publishTelemetry;
+
+// Start simulation ticks: runs dynamically based on simulation speed
+function runSimulationLoop() {
+  tickTimerId = setTimeout(() => {
+    try {
+      const updatedState = simulator.tickSimulation();
+      const time = updatedState.simulation_time;
+      
+      // Log occasionally on the server console
+      if (time.minute === 0) {
+        console.log(`[Sim Tick] Time ${time.hour.toString().padStart(2, '0')}:00 - Temp: ${updatedState.weather.ambient_temperature}°C - Weather: ${updatedState.weather.condition}`);
+      }
+
+      // Publish telemetry for each zone to MQTT so Wokwi ESP32 can consume it
+      updatedState.zones.forEach(zone => {
+        publishTelemetry(zone.zone_id);
+      });
+
+    } catch (error) {
+      console.error('Error during simulation loop execution:', error);
+    }
+    // Schedule the next tick
+    runSimulationLoop();
+  }, tickIntervalMs);
+}
+
+// Start initial execution
+runSimulationLoop();
+
+// API endpoint to change the simulation speed dynamically
+app.post('/api/simulation-speed', (req, res) => {
+  const { speed } = req.body;
+  if (speed === 'DEMO') {
+    tickIntervalMs = 3000;
+    console.log('🔄 Simulation speed switched to: DEMO (3s ticks)');
+  } else {
+    tickIntervalMs = 60000;
+    console.log('🔄 Simulation speed switched to: REALTIME (60s ticks)');
+  }
+  // Clear active timeout and run immediately to apply changes
+  if (tickTimerId) {
+    clearTimeout(tickTimerId);
+  }
+  runSimulationLoop();
+  res.json({ success: true, speed, interval: tickIntervalMs });
+});
 
 // Helper to detect language
 function detectLanguage(text) {
@@ -456,6 +500,6 @@ app.listen(PORT, () => {
   console.log(`MQTT Server:       ${MQTT_BROKER}`);
   console.log(`MQTT Telemetry:    smartfarm/zones/:zoneId/telemetry`);
   console.log(`MQTT Controls:     smartfarm/zones/:zoneId/control`);
-  console.log(`Simulation Loop:   Running every ${TICK_INTERVAL_MS / 1000} seconds`);
+  console.log(`Simulation Loop:   Running every ${tickIntervalMs / 1000} seconds`);
   console.log(`================================================================`);
 });
