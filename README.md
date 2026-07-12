@@ -134,7 +134,7 @@ Rural farms face **unreliable internet**, making cloud-dependent smart agricultu
 | Layer | Technologies |
 |-------|-------------|
 | **Edge Device** | ESP32, Arduino, DHT22, Soil Sensor, BMP280, Relay Module |
-| **Edge ML** | Custom neural network (trained in Python, deployed in C++) |
+| **Edge ML** | Custom CESI algorithm |
 | **Communication** | MQTT over HiveMQ public broker |
 | **Backend** | Node.js, Express.js |
 | **AI/LLM** | Groq (LLaMA 3.3 70B), Ollama (Qwen3 4B), Sarvam AI TTS |
